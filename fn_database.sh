@@ -1,0 +1,1 @@
+alias backup_postgres="pg_dumpall > /backup/postgres.bak"
