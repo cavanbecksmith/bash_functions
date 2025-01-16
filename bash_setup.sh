@@ -33,9 +33,9 @@ EOL
 
 load_env_file() {
     source ~/bash_functions/.env
-    # if [[ -z "$CUSTOM_ENTRYPOINT" ]]; then
-    #     source "$CUSTOM_ENTRYPOINT"
-    # fi
+    if [[ "$CUSTOM_ENTRYPOINT" != "" ]]; then
+        source "$CUSTOM_ENTRYPOINT"
+    fi
 }
 
 env_settings() {
