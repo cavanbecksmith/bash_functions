@@ -5,6 +5,7 @@ alias edit_subl="subl ~/.bashrc"
 alias ref=". ~/.bashrc"
 alias ..="cd ../"
 alias ...="cd ../../"
+alias bash_functions="subl ~/bash_functions"
 
 # source ./alias.sh
 source ~/bash_functions/bash_setup.sh
