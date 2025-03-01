@@ -1,6 +1,4 @@
-alias lvm="ssh localvm"
 alias sshconf="subl ~/.ssh/"
-
 
 function keys() {
     ls -la "$SSH_PATH"
@@ -15,12 +13,10 @@ function add_key() {
 }
 
 function create_key() {
-#    ssh-keygen -t rsa -b 4096 -C "cavanbecksmith@gmail.com" -f "$SSH_PATH/"$1
     ssh-keygen -t rsa -b 4096 -f "$SSH_PATH/"$1
     # eval $(ssh-agent -s)
     eval `ssh-agent -s`
     ssh-add "$SSH_PATH/"$1
-    #clip < "$SSH_PATH/"$1".pub"
     cat "$SSH_PATH/"$1".pub" | xclip -sel clip
 }
 

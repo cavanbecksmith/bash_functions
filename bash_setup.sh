@@ -33,13 +33,17 @@ EOL
 
 load_env_file() {
     source ~/bash_functions/.env
-    if [[ -n "$CUSTOM_ENTRYPOINT" ]]; then
+    if [[ "$CUSTOM_ENTRYPOINT" != "" ]]; then
         source "$CUSTOM_ENTRYPOINT"
     fi
 }
 
+env_settings() {
+    echo "Current OS: $OS"
+    echo "Current User: $USER"
+    echo "SSH_PATH: $SSH_PATH"
+    echo "APP_ENV: $APP_ENV"
+}
+
 load_env_file
-# echo "Current OS: $OS"
-# echo "Current User: $USER"
-# echo "SSH_PATH: $SSH_PATH"
-# echo "APP_ENV: $APP_ENV"
+# env_settings

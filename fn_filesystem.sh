@@ -1,35 +1,29 @@
-alias bash_backup="cp ~/.bash_profile $BASH_BACKUPDIR/bash_$(date '+%Y%m%d%H%M%S')"
-alias bash_backup="cp ~/.bashrc $BASH_BACKUPDIR/bashrc_$(date '+%Y%m%d%H%M%S')"
-
-function synctouch(){
-touch "/d/_SYNC/sync_container"
-touch "/d/_SYNC/development_container"
-}
-
-function synclocal(){
-  local src="/d/_SYNC"
-  local dest="/e/SYNC"
-  if [ "$1" == "upload" ] || [ "$1" == "up" ];then
-    read -p "Are you sure? " -r
-    if [[ $REPLY =~ ^[Yy]$ ]]
-    then
-      robocopy "$src" "$dest"
-    fi
-  elif [ "$1" == "download" ] || [ "$1" == "down" ];then
-    read -p "Are you sure? " -r
-    if [[ $REPLY =~ ^[Yy]$ ]]
-    then
-      robocopy "$dest" "$src"
-    fi
-  fi
-}
-
 
 # ====== NETWORKING
 
 # Example usage LINUX / WIN
 # scp_upload ssh_entry "C:\path\to\local\file.txt" "/path/to/remote/directory/"
 # scp_upload ssh_entry "/path/to/local/file.txt" "C:/path/to/remote/directory/"
+
+set_permissions() {
+    local target_directory=$1
+
+    if [ -z "$target_directory" ]; then
+        echo "Usage: set_permissions <directory>"
+        return 1
+    fi
+
+    if [ ! -d "$target_directory" ]; then
+        echo "Error: $target_directory is not a directory."
+        return 1
+    fi
+
+    find "$target_directory" -type d -exec chmod 755 {} \;
+    find "$target_directory" -type f -exec chmod 644 {} \;
+
+    echo "Permissions set to 755 for directories and 644 for files in $target_directory"
+}
+
 
 scp_upload() {
     if [ "$#" -ne 3 ]; then
