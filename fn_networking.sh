@@ -1,8 +1,9 @@
 alias router_ips="arp -a"
 alias read_active_conn="netstat -b"
 alias list_active_conn="netstat -a"
+# TUNNELS
 alias pi_vnctunn="ssh -N -L 5900:127.0.0.1:5900 $1"
-# alias ollama_tun="ssh -i ~/.ssh/ollama -L 11434:localhost:11434 anon@192.168.0.8 -N"
+# alias ollama_tun="ssh -i ~/.ssh/<key> -L 11434:localhost:11434 anon@192.168.0.8 -N"
 
 function cloudflare_enroll(){
 	warp-cli registration new $1
