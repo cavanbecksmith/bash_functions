@@ -16,3 +16,37 @@ function ssh_tunnel() {
  # e.g ssh -N -L 8082:127.0.0.1:5432 ssh_conf_ref
  ssh -N -L $1:127.0.0.1:$2 $3
 }
+
+
+whois() {
+  local domain="$1"
+  local whois_server="whois.iana.org"  # Default Whois server
+
+  if [[ -z "$domain" ]]; then
+    echo "Usage: whois_domain <domain>"
+    return 1
+  fi
+
+  # Perform the Whois lookup using netcat (nc) and curl
+  local response=$(echo "$domain" | nc "$whois_server" 43)
+
+  # Print the response
+  echo "$response"
+}
+
+
+whoisip() {
+  local ip="$1"
+  local whois_server="whois.arin.net"  # Default Whois server for IP addresses
+
+  if [[ -z "$ip" ]]; then
+    echo "Usage: whois_ip <ip_address>"
+    return 1
+  fi
+
+  # Perform the Whois lookup using netcat (nc)
+  local response=$(echo "$ip" | nc "$whois_server" 43)
+
+  # Print the response
+  echo "$response"
+}
