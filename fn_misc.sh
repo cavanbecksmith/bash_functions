@@ -28,3 +28,11 @@ generate_string() {
 }
 # generate_string 32 base64
 # generate_string 20 hex
+
+
+
+generate_signature() {
+    local json_payload="$1"
+    local secret="$2"
+    echo -n "$json_payload" | openssl dgst -sha256 -hmac "$secret" -binary | xxd -p -c 256
+}
