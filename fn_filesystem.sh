@@ -5,6 +5,18 @@
 # scp_upload ssh_entry "C:\path\to\local\file.txt" "/path/to/remote/directory/"
 # scp_upload ssh_entry "/path/to/local/file.txt" "C:/path/to/remote/directory/"
 
+find_largest_dirs() {
+  local PATH_TO_SCAN="${1:-/}"
+
+  echo "Scanning: $PATH_TO_SCAN"
+  echo ""
+  echo "Top 20 largest directories (depth = 2):"
+  echo "----------------------------------------"
+
+  sudo du -h --max-depth=2 "$PATH_TO_SCAN" 2>/dev/null | sort -hr | head -n 20
+}
+
+
 set_permissions() {
     local target_directory=$1
 
