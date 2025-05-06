@@ -5,6 +5,7 @@ alias open_ports="netstat -tulnp"
 # TUNNELS
 alias pi_vnctunn="ssh -N -L 5900:127.0.0.1:5900 $1"
 # alias ollama_tun="ssh -i ~/.ssh/<key> -L 11434:localhost:11434 anon@192.168.0.8 -N"
+alias ifconfig_debian="ip -c a s"
 
 function cloudflare_enroll(){
 	warp-cli registration new $1
