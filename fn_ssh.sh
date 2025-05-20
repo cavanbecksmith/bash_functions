@@ -41,3 +41,14 @@ function key_to_server() {
   fi
 }
 
+
+ssh_list() {
+    find ~/.ssh -type f -name '*_config' -exec grep -H '^\s*Host ' {} \; | awk '
+    {
+        split($0, parts, ":")
+        file = parts[1]
+        host_line = substr($0, length(file) + 2)
+        sub(/^\s*Host\s+/, "", host_line)
+        printf "%s: %s\n", file, host_line
+    }'
+}
