@@ -12,4 +12,26 @@ function subl(){
     return
 }
 
+set_gitbash_env() {
+    if [[ $# -ne 2 ]]; then
+        echo "Usage: set_gitbash_env VAR_NAME VAR_VALUE"
+        return 1
+    fi
 
+    local VAR_NAME="$1"
+    local VAR_VALUE="$2"
+    local RC_FILE="$HOME/.bashrc"
+
+    # If the variable is already exported, replace it
+    if grep -q "^export ${VAR_NAME}=" "$RC_FILE"; then
+        sed -i "s|^export ${VAR_NAME}=.*|export ${VAR_NAME}=\"${VAR_VALUE}\"|" "$RC_FILE"
+        echo "Updated $VAR_NAME in $RC_FILE"
+    else
+        echo "export ${VAR_NAME}=\"${VAR_VALUE}\"" >> "$RC_FILE"
+        echo "Added $VAR_NAME to $RC_FILE"
+    fi
+
+    # Apply it immediately to current session
+    export "${VAR_NAME}=${VAR_VALUE}"
+}
+# set_gitbash_env MY_VAR my_value
