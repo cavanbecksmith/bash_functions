@@ -1,3 +1,5 @@
+BASH_FUNCTION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 generate_env_file() {
     echo "Generating .env file..."
     read -p "Enter a value for HOME_DIRECTORY (Leave Empty for Auto Select Directory): " home_dir
@@ -32,7 +34,7 @@ EOL
 }
 
 load_env_file() {
-    source ~/bash_functions/.env
+    source "$BASH_FUNCTION_DIR/.env"
     if [[ "$CUSTOM_ENTRYPOINT" != "" ]]; then
         source "$CUSTOM_ENTRYPOINT"
     fi
