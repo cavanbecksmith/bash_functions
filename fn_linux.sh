@@ -40,5 +40,5 @@ findfolders() {
         shift
     fi
 
-    find "$start_dir" -type d -iname "$pattern"
+    find "$start_dir" -type d -iname "$pattern" 2>/dev/null
 }
