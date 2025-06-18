@@ -22,6 +22,7 @@ source "$BASH_FUNCTIONS_DIR/fn_misc.sh"
 source "$BASH_FUNCTIONS_DIR/fn_networking.sh"
 source "$BASH_FUNCTIONS_DIR/fn_scraper.sh"
 source "$BASH_FUNCTIONS_DIR/fn_ssh.sh"
+source "$BASH_FUNCTIONS_DIR/fn_web.sh"
 
 # source ./alias.sh
 # source ~/bash_functions/bash_setup.sh
