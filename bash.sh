@@ -25,6 +25,16 @@ source "$BASH_FUNCTIONS_DIR/fn_scraper.sh"
 source "$BASH_FUNCTIONS_DIR/fn_ssh.sh"
 source "$BASH_FUNCTIONS_DIR/fn_web.sh"
 
+# CORE COMMANDS
+alias edit="$EDITOR ~/.bashrc && $EDITOR ~/bash_functions"
+alias editn="nano ~/.bashrc"
+alias edit_subl="$EDITOR ~/.bashrc"
+alias ref=". ~/.bashrc"
+alias ..="cd ../"
+alias ...="cd ../../"
+alias bash_functions="$EDITOR ~/bash_functions"
+
+
 # source ./alias.sh
 # source ~/bash_functions/bash_setup.sh
 # source ~/bash_functions/fn_docker.sh

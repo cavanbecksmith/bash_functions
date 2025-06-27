@@ -5,6 +5,7 @@ generate_env_file() {
     read -p "Enter a value for HOME_DIRECTORY (Leave Empty for Auto Select Directory): " home_dir
     read -p "Enter a value for APP_ENV (e.g., development, production): " app_env
     read -p "Enter a value for CUSTOM_ENTRYPOINT (/root/entrypoint.sh): " entrypoint
+    read -p "Enter a value for code editor (e.g code, nano): " editor
     current_user="$USER"
     if [[ -z "$home_dir" ]]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -29,6 +30,7 @@ OS="${OSTYPE}"
 USER="$current_user"
 HOME_DIRECTORY="$home_dir"
 CUSTOM_ENTRYPOINT="$entrypoint"
+EDITOR="$editor"
 EOL
     echo ".env file generated successfully."
 }
