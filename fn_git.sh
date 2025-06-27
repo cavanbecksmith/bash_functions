@@ -80,20 +80,72 @@ push_git_repos() {
 
     for folder in "${folders[@]}"; do
         if [ -d "$folder/.git" ]; then
-            echo "Checking $folder..."
+            echo
+            echo "🔍 Checking $folder..."
             git -C "$folder" status
 
-            echo -n "Do you want to commit and push changes in $folder? (y/n): "
-            read -r answer
-            if [[ "$answer" =~ ^[Yy]$ ]]; then
-                git -C "$folder" add .
-                git -C "$folder" commit -m "Generic update"
-                git -C "$folder" push
-            else
-                echo "Skipped $folder"
-            fi
+            while true; do
+                echo -n "Do you want to push changes in $folder? (y=push / n=skip / d=diff): "
+                read -r answer
+                case "$answer" in
+                    [Yy])
+                        git -C "$folder" push
+                        break
+                        ;;
+                    [Nn])
+                        echo "⏩ Skipped $folder"
+                        break
+                        ;;
+                    [Dd])
+                        echo "🔎 Diff for $folder:"
+                        git -C "$folder" diff
+                        ;;
+                    *)
+                        echo "❓ Invalid choice. Please enter y, n, or d."
+                        ;;
+                esac
+            done
         else
-            echo "Skipping $folder – not a Git repo."
+            echo "⚠️ Skipping $folder – not a Git repo."
         fi
     done
+}
+
+
+add_repo() {
+    local repo_path="$1"
+    local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+
+    # Check if argument was provided
+    if [ -z "$repo_path" ]; then
+        echo "❌ Usage: add_repo <absolute-path-to-repo>"
+        return 1
+    fi
+
+    # Ensure target dir exists
+    mkdir -p "$(dirname "$json_file")"
+
+    # Create file if it doesn't exist
+    if [ ! -f "$json_file" ]; then
+        echo "[]" > "$json_file"
+    fi
+
+    # Clean up input path
+    repo_path=$(realpath "$repo_path" 2>/dev/null)
+    if [ ! -d "$repo_path/.git" ]; then
+        echo "⚠️ $repo_path is not a valid Git repo."
+        return 1
+    fi
+
+    # Check for duplicate
+    if grep -qF "\"$repo_path\"" "$json_file"; then
+        echo "✅ Repo already exists in repos.json"
+        return 0
+    fi
+
+    # Insert into JSON array
+    tmp_file=$(mktemp)
+    jq --arg path "$repo_path" '. + [$path]' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
+
+    echo "✅ Added $repo_path to $json_file"
 }
