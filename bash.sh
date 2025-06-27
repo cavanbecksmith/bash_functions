@@ -1,11 +1,12 @@
 # CORE COMMANDS
-alias edit="subl ~/.bashrc && subl ~/bash_functions"
+editor="code"
+alias edit="$editor ~/.bashrc && $editor ~/bash_functions"
 alias editn="nano ~/.bashrc"
-alias edit_subl="subl ~/.bashrc"
+alias edit_subl="$editor ~/.bashrc"
 alias ref=". ~/.bashrc"
 alias ..="cd ../"
 alias ...="cd ../../"
-alias bash_functions="subl ~/bash_functions"
+alias bash_functions="$editor ~/bash_functions"
 
 # Get the directory this script is located in
 BASH_FUNCTIONS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
