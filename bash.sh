@@ -1,12 +1,3 @@
-# CORE COMMANDS
-editor="code"
-alias edit="$editor ~/.bashrc && $editor ~/bash_functions"
-alias editn="nano ~/.bashrc"
-alias edit_subl="$editor ~/.bashrc"
-alias ref=". ~/.bashrc"
-alias ..="cd ../"
-alias ...="cd ../../"
-alias bash_functions="$editor ~/bash_functions"
 
 # Get the directory this script is located in
 BASH_FUNCTIONS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,6 +15,16 @@ source "$BASH_FUNCTIONS_DIR/fn_networking.sh"
 source "$BASH_FUNCTIONS_DIR/fn_scraper.sh"
 source "$BASH_FUNCTIONS_DIR/fn_ssh.sh"
 source "$BASH_FUNCTIONS_DIR/fn_web.sh"
+
+# CORE COMMANDS
+alias edit="$EDITOR ~/.bashrc && $EDITOR ~/bash_functions"
+alias editn="nano ~/.bashrc"
+alias edit_subl="$EDITOR ~/.bashrc"
+alias ref=". ~/.bashrc"
+alias ..="cd ../"
+alias ...="cd ../../"
+alias bash_functions="$EDITOR ~/bash_functions"
+
 
 # source ./alias.sh
 # source ~/bash_functions/bash_setup.sh
