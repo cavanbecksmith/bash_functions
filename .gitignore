@@ -1,3 +1,4 @@
 .env
 repos.json
 jq
+jq.exe
