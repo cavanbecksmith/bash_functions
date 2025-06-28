@@ -35,6 +35,51 @@ EOL
     echo ".env file generated successfully."
 }
 
+jq_install() {
+    if [ -z "$BASH_FUNCTIONS_DIR" ]; then
+        echo "❌ BASH_FUNCTIONS_DIR is not set."
+        return 1
+    fi
+
+    local jq_version="jq-1.7"
+    local uname_os uname_arch platform output_name
+
+    uname_os=$(uname -s)
+    uname_arch=$(uname -m)
+    output_name="jq"
+
+    # Determine correct platform
+    case "$uname_os" in
+        Linux)
+            platform="jq-linux64"
+            ;;
+        Darwin)
+            platform="jq-osx-amd64"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            platform="jq-win64.exe"
+            output_name="jq.exe"
+            ;;
+        *)
+            echo "❌ Unsupported OS: $uname_os"
+            return 1
+            ;;
+    esac
+
+    local install_path="$BASH_FUNCTIONS_DIR/$output_name"
+    local url="https://github.com/jqlang/jq/releases/download/${jq_version}/${platform}"
+
+    echo "⬇️ Downloading jq to $install_path..."
+    mkdir -p "$BASH_FUNCTIONS_DIR"
+    curl -L "$url" -o "$install_path" || { echo "❌ Download failed."; return 1; }
+
+    chmod +x "$install_path"
+    echo "✅ jq installed to $install_path"
+    echo "ℹ️ Run with: $install_path --version"
+}
+
+
+
 load_env_file() {
     source "$BASH_FUNCTION_DIR/.env"
     if [[ "$CUSTOM_ENTRYPOINT" != "" ]]; then

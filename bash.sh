@@ -33,6 +33,7 @@ alias ref=". ~/.bashrc"
 alias ..="cd ../"
 alias ...="cd ../../"
 alias bash_functions="$EDITOR ~/bash_functions"
+alias lsa="ls -la"
 
 
 # source ./alias.sh

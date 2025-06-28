@@ -149,3 +149,43 @@ add_repo() {
 
     echo "✅ Added $repo_path to $json_file"
 }
+
+
+select_repo() {
+    local json_file="$HOME/bash_functions/repos.json"
+
+    if [ ! -f "$json_file" ]; then
+        echo "❌ $json_file not found."
+        return 1
+    fi
+
+    # Read and parse repo list
+    mapfile -t repos < <(jq -r '.[]' "$json_file")
+
+    if [ "${#repos[@]}" -eq 0 ]; then
+        echo "📭 No repos found in $json_file."
+        return 1
+    fi
+
+    echo "📁 Available Repos:"
+    for i in "${!repos[@]}"; do
+        printf "[%d] %s\n" "$((i + 1))" "${repos[$i]}"
+    done
+
+    echo -n "🔢 Enter a number to cd into that repo: "
+    read -r choice
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#repos[@]}" ]; then
+        echo "❌ Invalid selection."
+        return 1
+    fi
+
+    local selected="${repos[$((choice - 1))]}"
+    if [ -d "$selected" ]; then
+        echo "📂 Changing directory to: $selected"
+        cd "$selected" || return 1
+    else
+        echo "⚠️ Directory does not exist: $selected"
+        return 1
+    fi
+}
