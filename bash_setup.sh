@@ -79,7 +79,6 @@ jq_install() {
 }
 
 
-
 load_env_file() {
     source "$BASH_FUNCTION_DIR/.env"
     if [[ "$CUSTOM_ENTRYPOINT" != "" ]]; then

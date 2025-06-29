@@ -151,8 +151,9 @@ add_repo() {
 }
 
 
-select_repo() {
-    local json_file="$HOME/bash_functions/repos.json"
+repos() {
+    local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+    # local jq="jq.exe"
 
     if [ ! -f "$json_file" ]; then
         echo "❌ $json_file not found."
@@ -160,7 +161,7 @@ select_repo() {
     fi
 
     # Read and parse repo list
-    mapfile -t repos < <(jq -r '.[]' "$json_file")
+    mapfile -t repos < <($BASH_FUNCTIONS_DIR/jq -r '.[]' "$json_file")
 
     if [ "${#repos[@]}" -eq 0 ]; then
         echo "📭 No repos found in $json_file."
@@ -181,11 +182,48 @@ select_repo() {
     fi
 
     local selected="${repos[$((choice - 1))]}"
-    if [ -d "$selected" ]; then
-        echo "📂 Changing directory to: $selected"
-        cd "$selected" || return 1
-    else
-        echo "⚠️ Directory does not exist: $selected"
+    echo $selected
+    trimmed=$(echo "$selected" | xargs)
+    # if [ -d "$selected" ]; then
+    echo "📂 Changing directory to: $selected"
+    cd $trimmed # || return 1
+    # else
+    #     echo "⚠️ Directory does not exist: $selected"
+    #     return 1
+    # fi
+}
+
+reposcheck() {
+    local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+    local jq="$BASH_FUNCTIONS_DIR/jq"  # or just "jq" if it's in your PATH
+
+    if [ ! -f "$json_file" ]; then
+        echo "❌ repos.json not found: $json_file"
         return 1
     fi
+
+    mapfile -t repos < <($jq -r '.[]' "$json_file")
+
+    if [ "${#repos[@]}" -eq 0 ]; then
+        echo "📭 No repos found in $json_file"
+        return 1
+    fi
+
+    echo "🔍 Checking Git status for each repo..."
+
+    for repo in "${repos[@]}"; do
+        # if [ -d "$repo/.git" ]; then
+            repo=$(echo "$repo" | xargs)
+            cd "$repo" || continue
+            if [[ -n $(git status --porcelain) ]]; then
+                echo "❌ Changes: $repo"
+            else
+                echo "✅ Clean:   $repo"
+            fi
+        # else
+        #     echo "⚠️ Not a Git repo: $repo"
+        # fi
+    done
 }
+
+alias repos_edit="$EDITOR $BASH_FUNCTIONS_DIR/repos.json"
