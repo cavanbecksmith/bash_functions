@@ -227,3 +227,4 @@ reposcheck() {
 }
 
 alias repos_edit="$EDITOR $BASH_FUNCTIONS_DIR/repos.json"
+alias gitlog="git log --oneline"
