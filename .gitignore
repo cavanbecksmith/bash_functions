@@ -2,3 +2,5 @@
 repos.json
 jq
 jq.exe
+local/*
+!local/_.txt
