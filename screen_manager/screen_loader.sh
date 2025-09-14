@@ -10,6 +10,7 @@
 #   screen_manager --status           # Show running sessions
 #   screen_manager --help             # Show help
 
+alias screens="screen_manager $@"
 screen_manager() {
     # Configuration - adjust these paths as needed
     local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
