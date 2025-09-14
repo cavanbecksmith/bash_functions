@@ -24,14 +24,14 @@ screen_manager() {
     local NC='\033[0m' # No Color
     
     # Function to print colored output
-    local print_color() {
+    print_color() {
         local color=$1
         shift
         echo -e "${color}$*${NC}"
     }
     
     # Function to get the correct Python command
-    local get_python_command() {
+    get_python_command() {
         if command -v python3 &> /dev/null; then
             echo "python3"
         elif command -v python &> /dev/null; then
@@ -42,7 +42,7 @@ screen_manager() {
     }
     
     # Function to check if required files exist
-    local check_dependencies() {
+    check_dependencies() {
         local skip_screen_check="${1:-false}"
         
         if [[ ! -f "$PYTHON_HELPER" ]]; then
@@ -77,7 +77,7 @@ screen_manager() {
     }
     
     # Function to get available screens
-    local get_available_screens() {
+    get_available_screens() {
         local python_cmd=$(get_python_command)
         local output
         output=$($python_cmd "$PYTHON_HELPER" list 2>&1)
@@ -92,7 +92,7 @@ screen_manager() {
     }
     
     # Function to display menu and get user choice
-    local show_menu() {
+    show_menu() {
         print_color $BLUE "=== Screen Session Manager ==="
         echo
         
@@ -156,7 +156,7 @@ screen_manager() {
     }
     
     # Function to check if a screen session exists
-    local screen_exists() {
+    screen_exists() {
         local screen_name=$1
         local python_cmd=$(get_python_command)
         local result
@@ -171,7 +171,7 @@ screen_manager() {
     }
     
     # Function to create and start a new screen session
-    local create_screen() {
+    create_screen() {
         local screen_name=$1
         
         print_color $BLUE "Creating new screen session: $screen_name"
@@ -224,7 +224,7 @@ screen_manager() {
     }
     
     # Function to attach to existing screen session
-    local attach_screen() {
+    attach_screen() {
         local screen_name=$1
         
         print_color $GREEN "Attaching to existing screen session: $screen_name"
@@ -232,7 +232,7 @@ screen_manager() {
     }
     
     # Function to handle screen session
-    local manage_screen() {
+    manage_screen() {
         local screen_name=$1
         
         if screen_exists "$screen_name"; then
@@ -276,7 +276,7 @@ screen_manager() {
     }
     
     # Function to display help
-    local show_help() {
+    show_help() {
         echo "Screen Session Manager Function"
         echo
         echo "Usage: screen_manager [OPTION] [SCREEN_NAME]"
