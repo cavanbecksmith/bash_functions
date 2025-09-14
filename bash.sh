@@ -12,6 +12,7 @@ BASH_FUNCTIONS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source each script using an absolute path
 # source "$BASH_FUNCTIONS_DIR/alias.sh"
+source "$BASH_FUNCTIONS_DIR/screen_manager/screen_loader.sh"
 source "$BASH_FUNCTIONS_DIR/bash_setup.sh"
 source "$BASH_FUNCTIONS_DIR/fn_docker.sh"
 source "$BASH_FUNCTIONS_DIR/fn_database.sh"
