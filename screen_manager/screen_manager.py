@@ -111,13 +111,17 @@ class ScreenManager:
                 for i, window in enumerate(config['windows']):
                     window_name = window.get('name', f'window{i+1}')
                     window_cmd = window.get('command', 'bash')
-                    
+                    window_dir = window.get('working_directory', config.get('working_directory', None))
+                    if window_dir:
+                        full_cmd = f"bash -c 'cd {window_dir} && {window_cmd}'"
+                    else:
+                        full_cmd = window_cmd
                     if i == 0:
                         # First window
-                        f.write(f"screen -t '{window_name}' {window_cmd}\n")
+                        f.write(f"screen -t '{window_name}' {full_cmd}\n")
                     else:
                         # Additional windows
-                        f.write(f"screen -t '{window_name}' {window_cmd}\n")
+                        f.write(f"screen -t '{window_name}' {full_cmd}\n")
             else:
                 # Default single window
                 f.write("screen -t 'main' bash\n")
