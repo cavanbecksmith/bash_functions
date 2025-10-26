@@ -74,3 +74,64 @@ docker_restore_volume() {
   docker stop $container_id >/dev/null
   echo "Restore completed successfully."
 }
+
+# =================== BACKUP ALL DOCKER FUNCTIONS
+
+# Backup all Docker volumes using your existing function
+docker_backup_all_volumes() {
+  local backup_dir=$1
+
+  if [ -z "$backup_dir" ]; then
+    echo "Usage: docker_backup_all_volumes <backup_directory>"
+    return 1
+  fi
+
+  mkdir -p "$backup_dir"
+
+  echo "🔍 Finding all Docker volumes..."
+  local volumes=$(docker volume ls -q)
+
+  if [ -z "$volumes" ]; then
+    echo "No Docker volumes found to back up."
+    return 0
+  fi
+
+  for volume in $volumes; do
+    local backup_path="${backup_dir}/${volume}.tar.gz"
+    echo "🧩 Backing up volume: $volume"
+    docker_backup_volume "$volume" "$backup_path"
+  done
+
+  echo "✅ All Docker volumes have been backed up to '$backup_dir'."
+}
+
+# Restore all Docker volumes using your existing function
+docker_restore_all_volumes() {
+  local backup_dir=$1
+
+  if [ -z "$backup_dir" ]; then
+    echo "Usage: docker_restore_all_volumes <backup_directory>"
+    return 1
+  fi
+
+  echo "🔍 Looking for backup files in '$backup_dir'..."
+  local backups=$(find "$backup_dir" -type f -name "*.tar.gz")
+
+  if [ -z "$backups" ]; then
+    echo "No backup files found in '$backup_dir'."
+    return 0
+  fi
+
+  for backup_file in $backups; do
+    local filename=$(basename -- "$backup_file")
+    local volume_name="${filename%.tar.gz}"
+
+    # Create the volume if it doesn't exist
+    docker volume inspect "$volume_name" >/dev/null 2>&1 || docker volume create "$volume_name"
+
+    echo "📦 Restoring volume: $volume_name from $backup_file"
+    docker_restore_volume "$volume_name" "$backup_file"
+  done
+
+  echo "✅ All Docker volumes have been restored from '$backup_dir'."
+}

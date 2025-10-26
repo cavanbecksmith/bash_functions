@@ -53,3 +53,18 @@ whoisip() {
   # Print the response
   echo "$response"
 }
+
+
+ufw_allow_cidr() {
+  local cidr="$1"
+  local port="$2"
+
+  if [[ -z "$cidr" || -z "$port" ]]; then
+    echo "Usage: ufw_allow_cidr <cidr_block> <port>"
+    echo "Example: ufw_allow_cidr 192.168.1.0/24 22"
+    return 1
+  fi
+
+  # Execute the UFW command
+  sudo ufw allow from "$cidr" to any port "$port"
+}
