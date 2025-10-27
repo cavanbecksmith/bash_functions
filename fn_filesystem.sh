@@ -60,3 +60,46 @@ scp_upload() {
         return 1
     fi
 }
+
+
+sftp_upload() {
+  #----------------------------------------------------------
+  # sftp_upload
+  #
+  # Uploads a file or directory to a remote server via SFTP
+  # using a host defined in your SSH config (~/.ssh/config).
+  #
+  # Usage:
+  #   sftp_upload <host> <source> <destination>
+  #
+  # Example:
+  #   sftp_upload myserver ./index.html /var/www/html/
+  #
+  # Notes:
+  #   - The host must be defined in your SSH config.
+  #   - Creates the remote directory if it doesn’t exist.
+  #   - Supports single file and recursive directory uploads.
+  #----------------------------------------------------------
+
+  local host="$1"
+  local src="$2"
+  local dest="$3"
+
+  # Help
+  if [[ "$1" == "-h" || "$1" == "--help" || -z "$host" || -z "$src" || -z "$dest" ]]; then
+    echo "Usage: sftp_upload <host> <source> <destination>"
+    echo "Example: sftp_upload myserver ./index.html /var/www/html/"
+    return 0
+  fi
+
+  # Check source
+  [[ ! -e "$src" ]] && echo "Source not found." && return 1
+
+  # Ensure remote directory exists
+  ssh -o StrictHostKeyChecking=no "$host" "mkdir -p '$dest'" || return 1
+
+  # Upload
+  sftp -o StrictHostKeyChecking=no "$host" <<< $"put -r $src $dest" || return 1
+
+  echo "Done."
+}

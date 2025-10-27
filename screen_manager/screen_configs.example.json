@@ -1,0 +1,83 @@
+{
+  "development": {
+    "description": "Development environment setup",
+    "working_directory": "/home/user/projects/myapp",
+    "commands": [
+      "cd /home/user/projects/myapp",
+      "source venv/bin/activate",
+      "export DEBUG=1"
+    ],
+    "windows": [
+      {
+        "name": "editor",
+        "command": "vim src/main.py"
+      },
+      {
+        "name": "server",
+        "command": "python manage.py runserver"
+      },
+      {
+        "name": "logs",
+        "command": "tail -f logs/app.log"
+      }
+    ]
+  },
+  "monitoring": {
+    "description": "System monitoring dashboard",
+    "working_directory": "/var/log",
+    "commands": [
+      "cd /var/log"
+    ],
+    "windows": [
+      {
+        "name": "htop",
+        "command": "htop"
+      },
+      {
+        "name": "syslog",
+        "command": "tail -f syslog"
+      },
+      {
+        "name": "network",
+        "command": "watch -n 2 'netstat -tuln'"
+      }
+    ]
+  },
+  "database": {
+    "description": "Database management session",
+    "working_directory": "/opt/database",
+    "commands": [
+      "cd /opt/database",
+      "export DB_HOST=localhost"
+    ],
+    "windows": [
+      {
+        "name": "mysql",
+        "command": "mysql -u root -p"
+      },
+      {
+        "name": "backup",
+        "command": "watch -n 300 'mysqldump --all-databases > backup_$(date +%Y%m%d_%H%M%S).sql'"
+      }
+    ]
+  },
+  "workspace": {
+    "description": "Simple workspace in home directory",
+    "working_directory": "/home/user/workspace"
+  },
+  "projects": {
+    "description": "Projects directory with multiple terminals",
+    "working_directory": "/somedir",
+    "windows": [
+      {
+        "name": "main"
+      },
+      {
+        "name": "git"
+      },
+      {
+        "name": "logs"
+      }
+    ]
+  }
+}

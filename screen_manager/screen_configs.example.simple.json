@@ -1,0 +1,23 @@
+{
+  "root": {
+    "description": "root user",
+    "working_directory": "/root/",
+    "windows": [
+      {
+        "name": "root1",
+        "working_directory": "/root/",
+        "command": "bash"
+      },
+      {
+        "name": "root2",
+        "working_directory": "/root/",
+        "command": "bash"
+      },
+      {
+        "name": "root3",
+        "working_directory": "/root/",
+        "command": "bash"
+      }
+    ]
+  }
+}
