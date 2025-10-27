@@ -1,0 +1,1 @@
+alias osv="NODE_TLS_REJECT_UNAUTHORIZED=0 node $BASH_FUNCTIONS_DIR/node/osv.js $1"

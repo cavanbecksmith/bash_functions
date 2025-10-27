@@ -3,6 +3,8 @@ alias edit="subl ~/.bashrc && subl ~/bash_functions"
 alias editn="nano ~/.bashrc"
 alias edit_subl="subl ~/.bashrc"
 alias ref=". ~/.bashrc"
+alias las="ls -la"
+alias rp="cd ~/repos"
 alias ..="cd ../"
 alias ...="cd ../../"
 alias bash_functions="cd $HOME/bash_functions"
@@ -24,6 +26,9 @@ source "$BASH_FUNCTIONS_DIR/fn_python.sh"
 source "$BASH_FUNCTIONS_DIR/fn_scraper.sh"
 source "$BASH_FUNCTIONS_DIR/fn_ssh.sh"
 source "$BASH_FUNCTIONS_DIR/fn_web.sh"
+
+# Source each shell scripts in folders
+source "$BASH_FUNCTIONS_DIR/node/node.sh"
 
 # CORE COMMANDS
 alias edit="$EDITOR ~/.bashrc && $EDITOR ~/bash_functions"

@@ -6,6 +6,7 @@ alias VBoxManage='"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe"'
 alias qemu='"/c/Program Files/qemu/qemu-system-x86_64.exe"'
 alias qemu-system-x86_64='"/c/Program Files/qemu/qemu-system-x86_64.exe"'
 alias qemu-img='"/c/Program Files/qemu/qemu-img"'
+alias powershellrc="code $HOME/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1"
 
 function subl(){
     /c/Program\ Files/Sublime\ Text/sublime_text.exe $1 &

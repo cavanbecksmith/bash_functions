@@ -132,10 +132,10 @@ add_repo() {
 
     # Clean up input path
     repo_path=$(realpath "$repo_path" 2>/dev/null)
-    if [ ! -d "$repo_path/.git" ]; then
-        echo "⚠️ $repo_path is not a valid Git repo."
-        return 1
-    fi
+    # if [ ! -d "$repo_path/.git" ]; then
+    #     echo "⚠️ $repo_path is not a valid Git repo."
+    #     return 1
+    # fi
 
     # Check for duplicate
     if grep -qF "\"$repo_path\"" "$json_file"; then
