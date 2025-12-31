@@ -112,3 +112,41 @@ emojipick() {
         grep '"group":' "$JSON" | sed -E 's/.*"group": ?"([^"]+)".*/\1/' | sort | uniq
     fi
 }
+
+lsb() {
+    local fn_dir="$BASH_FUNCTION_DIR"
+    
+    if [ -z "$fn_dir" ]; then
+        echo "❌ BASH_FUNCTION_DIR not set"
+        return 1
+    fi
+
+    echo "Bash Functions Library"
+    echo "======================"
+    echo
+
+    # Loop through all fn_*.sh files
+    for file in "$fn_dir"/fn_*.sh; do
+        if [ -f "$file" ]; then
+            local filename=$(basename "$file" .sh)
+            
+            # Extract function names (matches both "function name()" and "name()")
+            local functions=$(grep -E '^\s*(function\s+)?[a-zA-Z_][a-zA-Z0-9_]*\s*\(\)' "$file" | \
+                             sed -E 's/^\s*(function\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\).*/\2/' | \
+                             sort)
+            
+            if [ -n "$functions" ]; then
+                local len=${#filename}
+                local underline=$(printf '%*s' "$len" | tr ' ' '-')
+                echo "$filename"
+                echo "$underline"
+                echo "$functions"
+                echo "---"
+                echo
+            fi
+        fi
+    done
+    
+    echo "========================="
+    echo "💡 Run 'type <function_name>' to see definition"
+}

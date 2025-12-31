@@ -151,6 +151,139 @@ add_repo() {
 }
 
 
+repoadd() {
+    local repo_path="${1:-.}"  # Default to current directory if no argument
+    local json_file="$BASH_FUNCTION_DIR/repos.json"
+    local jq_cmd="$BASH_FUNCTION_DIR/jq"
+
+    # Create file if it doesn't exist
+    if [ ! -f "$json_file" ]; then
+        echo "[]" > "$json_file"
+    fi
+
+    # Resolve to absolute path
+    if [ ! -e "$repo_path" ]; then
+        echo "❌ Path does not exist: $repo_path"
+        return 1
+    fi
+
+    local abs_path
+    abs_path=$(cd "$repo_path" && pwd)
+
+    if [ -z "$abs_path" ]; then
+        echo "❌ Failed to resolve path: $repo_path"
+        return 1
+    fi
+
+    # Check for duplicate
+    if grep -qF "\"$abs_path\"" "$json_file"; then
+        echo "✅ Path already exists in repos.json: $abs_path"
+        return 0
+    fi
+
+    # Insert into JSON array
+    tmp_file=$(mktemp)
+    "$jq_cmd" --arg path "$abs_path" '. + [$path]' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
+
+    echo "✅ Added to repos.json: $abs_path"
+}
+
+
+repodel() {
+    local json_file="$BASH_FUNCTION_DIR/repos.json"
+    local jq_cmd="$BASH_FUNCTION_DIR/jq"
+    local hard_delete=false
+
+    # Check for hard delete flag
+    if [[ "$1" == "--hard" || "$1" == "-h" ]]; then
+        hard_delete=true
+    fi
+
+    if [ ! -f "$json_file" ]; then
+        echo "❌ $json_file not found."
+        return 1
+    fi
+
+    # Read and parse repo list
+    mapfile -t repos < <("$jq_cmd" -r '.[]' "$json_file")
+
+    if [ "${#repos[@]}" -eq 0 ]; then
+        echo "📭 No repos found in $json_file."
+        return 1
+    fi
+
+    echo "📁 Repos in repos.json:"
+    for i in "${!repos[@]}"; do
+        printf "[%d] %s\n" "$((i + 1))" "${repos[$i]}"
+    done
+
+    echo -n "🗑️  Enter number to delete (or 0 to cancel): "
+    read -r choice
+
+    if [ "$choice" -eq 0 ]; then
+        echo "❌ Cancelled."
+        return 0
+    fi
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#repos[@]}" ]; then
+        echo "❌ Invalid selection."
+        return 1
+    fi
+
+    local selected="${repos[$((choice - 1))]}"
+    local trimmed=$(echo "$selected" | xargs)
+
+    if [ "$hard_delete" = true ]; then
+        # Hard delete - remove from JSON and filesystem
+        echo
+        echo "⚠️⚠️⚠️  WARNING: PERMANENT DELETION ⚠️⚠️⚠️"
+        echo "This will DELETE the entire directory from your filesystem:"
+        echo "  $trimmed"
+        echo
+        echo -n "Type 'DELETE' to confirm permanent deletion: "
+        read -r hard_confirm
+
+        if [ "$hard_confirm" != "DELETE" ]; then
+            echo "❌ Cancelled. Directory was not deleted."
+            return 0
+        fi
+
+        # Check if directory exists
+        if [ -d "$trimmed" ]; then
+            echo "🗑️  Deleting directory from filesystem..."
+            rm -rf "$trimmed"
+            if [ $? -eq 0 ]; then
+                echo "✅ Directory deleted: $trimmed"
+            else
+                echo "❌ Failed to delete directory: $trimmed"
+                return 1
+            fi
+        else
+            echo "⚠️  Directory does not exist: $trimmed"
+        fi
+
+        # Remove from JSON
+        tmp_file=$(mktemp)
+        "$jq_cmd" --arg path "$selected" 'map(select(. != $path))' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
+        echo "✅ Removed from repos.json: $selected"
+    else
+        # Soft delete - remove from JSON only
+        echo "⚠️  About to remove from repos.json: $selected"
+        echo -n "Are you sure? (y/n): "
+        read -r confirm
+
+        if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+            echo "❌ Cancelled."
+            return 0
+        fi
+
+        tmp_file=$(mktemp)
+        "$jq_cmd" --arg path "$selected" 'map(select(. != $path))' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
+        echo "✅ Removed from repos.json: $selected"
+    fi
+}
+
+
 repos() {
     local json_file="$BASH_FUNCTIONS_DIR/repos.json"
     # local jq="jq.exe"
@@ -224,6 +357,73 @@ reposcheck() {
         #     echo "⚠️ Not a Git repo: $repo"
         # fi
     done
+}
+
+gclone() {
+    local git_url="$1"
+    local custom_name="$2"
+    local repos_dir="$HOME/repos"
+    local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+
+    # Check if git URL was provided
+    if [ -z "$git_url" ]; then
+        echo "❌ Usage: git_clone_repo <git-url> [custom-name]"
+        echo "   Example: git_clone_repo https://github.com/user/repo.git"
+        echo "   Example: git_clone_repo https://github.com/user/repo.git my-custom-name"
+        return 1
+    fi
+
+    # Create repos directory if it doesn't exist
+    mkdir -p "$repos_dir"
+
+    # Extract repo name from git URL if custom name not provided
+    local repo_name
+    if [ -n "$custom_name" ]; then
+        repo_name="$custom_name"
+    else
+        # Extract name from URL (e.g., https://github.com/user/repo.git -> repo)
+        repo_name=$(basename "$git_url" .git)
+    fi
+
+    local target_path="$repos_dir/$repo_name"
+
+    # Check if directory already exists
+    if [ -d "$target_path" ]; then
+        echo "⚠️  Directory already exists: $target_path"
+        return 1
+    fi
+
+    # Clone the repository
+    echo "📥 Cloning $git_url into $target_path..."
+    if git clone "$git_url" "$target_path"; then
+        echo "✅ Successfully cloned repository"
+        
+        # Add to repos.json
+        # Create file if it doesn't exist
+        if [ ! -f "$json_file" ]; then
+            echo "[]" > "$json_file"
+        fi
+
+        # Get absolute path in Git Bash format (/c/Users/...)
+        local abs_path
+        abs_path=$(cd "$target_path" && pwd)
+
+        # Check for duplicate
+        if grep -qF "\"$abs_path\"" "$json_file"; then
+            echo "ℹ️  Repo already in repos.json"
+        else
+            # Insert into JSON array
+            tmp_file=$(mktemp)
+            jq --arg path "$abs_path" '. + [$path]' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
+            echo "✅ Added $abs_path to repos.json"
+        fi
+
+        echo "📂 Repository location: $target_path"
+        return 0
+    else
+        echo "❌ Failed to clone repository"
+        return 1
+    fi
 }
 
 alias repos_edit="$EDITOR $BASH_FUNCTIONS_DIR/repos.json"
