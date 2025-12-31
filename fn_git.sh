@@ -1,4 +1,17 @@
 
+# Function aliases
+alias ac='autocommit'
+alias gr='git_reset'
+alias pullr='pull_git_repos'
+alias pushr='push_git_repos'
+alias rpoa='repoadd'
+alias rpod='repodel'
+alias rpo='repos'
+alias rpoo='reposopen'
+alias rpc='reposcheck'
+alias gc='gclone'
+# alias addr='add_repo'
+
 function autocommit() {
 	git add --all
 	git commit -m "AUTO COMMIT"
@@ -14,7 +27,6 @@ else
 fi
 
 }
-
 
 pull_git_repos() {
     local json_file="$HOME/bash_functions/repos.json"   
@@ -112,43 +124,43 @@ push_git_repos() {
 }
 
 
-add_repo() {
-    local repo_path="$1"
-    local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+# add_repo() {
+#     local repo_path="$1"
+#     local json_file="$BASH_FUNCTIONS_DIR/repos.json"
 
-    # Check if argument was provided
-    if [ -z "$repo_path" ]; then
-        echo "❌ Usage: add_repo <absolute-path-to-repo>"
-        return 1
-    fi
+#     # Check if argument was provided
+#     if [ -z "$repo_path" ]; then
+#         echo "❌ Usage: add_repo <absolute-path-to-repo>"
+#         return 1
+#     fi
 
-    # Ensure target dir exists
-    mkdir -p "$(dirname "$json_file")"
+#     # Ensure target dir exists
+#     mkdir -p "$(dirname "$json_file")"
 
-    # Create file if it doesn't exist
-    if [ ! -f "$json_file" ]; then
-        echo "[]" > "$json_file"
-    fi
+#     # Create file if it doesn't exist
+#     if [ ! -f "$json_file" ]; then
+#         echo "[]" > "$json_file"
+#     fi
 
-    # Clean up input path
-    repo_path=$(realpath "$repo_path" 2>/dev/null)
-    # if [ ! -d "$repo_path/.git" ]; then
-    #     echo "⚠️ $repo_path is not a valid Git repo."
-    #     return 1
-    # fi
+#     # Clean up input path
+#     repo_path=$(realpath "$repo_path" 2>/dev/null)
+#     # if [ ! -d "$repo_path/.git" ]; then
+#     #     echo "⚠️ $repo_path is not a valid Git repo."
+#     #     return 1
+#     # fi
 
-    # Check for duplicate
-    if grep -qF "\"$repo_path\"" "$json_file"; then
-        echo "✅ Repo already exists in repos.json"
-        return 0
-    fi
+#     # Check for duplicate
+#     if grep -qF "\"$repo_path\"" "$json_file"; then
+#         echo "✅ Repo already exists in repos.json"
+#         return 0
+#     fi
 
-    # Insert into JSON array
-    tmp_file=$(mktemp)
-    jq --arg path "$repo_path" '. + [$path]' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
+#     # Insert into JSON array
+#     tmp_file=$(mktemp)
+#     jq --arg path "$repo_path" '. + [$path]' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
 
-    echo "✅ Added $repo_path to $json_file"
-}
+#     echo "✅ Added $repo_path to $json_file"
+# }
 
 
 repoadd() {
@@ -283,6 +295,13 @@ repodel() {
     fi
 }
 
+reposopen(){
+    cd ~/repos
+    # If e
+    if [ "$1" == "e" ]; then
+        open .
+    fi
+}
 
 repos() {
     local json_file="$BASH_FUNCTIONS_DIR/repos.json"
@@ -428,3 +447,26 @@ gclone() {
 
 alias repos_edit="$EDITOR $BASH_FUNCTIONS_DIR/repos.json"
 alias gitlog="git log --oneline"
+
+alias lazygit_install="$BASH_FUNCTIONS_DIR/apps/lazygit/install_lazygit.sh"
+
+# Lazygit function - uses locally installed lazygit if available
+lazygit() {
+    local LAZYGIT_BIN="$BASH_FUNCTIONS_DIR/apps/lazygit/bin/lazygit"
+    local LAZYGIT_EXE="$BASH_FUNCTIONS_DIR/apps/lazygit/bin/lazygit.exe"
+    
+    if [ -f "$LAZYGIT_EXE" ]; then
+        "$LAZYGIT_EXE" "$@"
+    elif [ -f "$LAZYGIT_BIN" ]; then
+        "$LAZYGIT_BIN" "$@"
+    elif command -v lazygit &> /dev/null; then
+        echo "ℹ️  Using system lazygit (local version not found)"
+        lazygit "$@"
+    else
+        echo "❌ lazygit not found!"
+        echo "Run: $BASH_FUNCTIONS_DIR/apps/lazygit/install_lazygit.sh"
+        return 1
+    fi
+}
+
+alias lg='lazygit_local'
