@@ -11,3 +11,5 @@ node/fetcher.json
 node/fetchers/*
 node/csvoutput/
 !node/fetchers/example.js
+# Apps
+apps/lazygit/bin
