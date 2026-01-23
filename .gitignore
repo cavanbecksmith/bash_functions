@@ -5,3 +5,9 @@ jq.exe
 local/*
 !local/_.txt
 screen_manager/screen_configs.json
+
+# Node
+node/fetcher.json
+node/fetchers/*
+node/csvoutput/
+!node/fetchers/example.js

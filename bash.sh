@@ -30,6 +30,7 @@ source "$BASH_FUNCTIONS_DIR/fn_web.sh"
 
 # Source each shell scripts in folders
 source "$BASH_FUNCTIONS_DIR/node/node.sh"
+source "$BASH_FUNCTIONS_DIR/node/fetcher.sh"
 
 # CORE COMMANDS
 alias edit="$EDITOR ~/.bashrc && $EDITOR ~/bash_functions"
