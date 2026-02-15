@@ -1,0 +1,1 @@
+alias fetcher="NODE_TLS_REJECT_UNAUTHORIZED=0 node $BASH_FUNCTIONS_DIR/node/fetcher.js"

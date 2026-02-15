@@ -469,4 +469,4 @@ lazygit() {
     fi
 }
 
-alias lg='lazygit_local'
+alias lg='lazygit'

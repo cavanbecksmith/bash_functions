@@ -1,0 +1,14 @@
+{
+  "google": {
+    "url": [
+        "https://google.com"
+      ],
+    "method": "GET",
+    "headers": {
+    "Authorization": ""
+    },
+    "fetcher": "google",
+    "body": null
+  }
+
+}

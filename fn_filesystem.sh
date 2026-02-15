@@ -147,3 +147,34 @@ sftp_upload() {
 
   echo "Done."
 }
+
+
+
+regex_replace() {
+    local file="$1"
+    local pattern="$2"
+    local replacement="$3"
+
+    if [[ ! -f "$file" ]]; then
+        echo "Error: File '$file' not found."
+        return 1
+    fi
+
+    # Create timestamp (YYYYMMDD_HHMMSS)
+    local timestamp
+    timestamp=$(date +"%Y%m%d_%H%M%S")
+
+    # Build output filename
+    local outfile="${file}_${timestamp}"
+
+    # Escape sed-sensitive characters
+    local esc_pattern
+    local esc_replacement
+    esc_pattern=$(printf '%s\n' "$pattern" | sed 's/[\/&]/\\&/g')
+    esc_replacement=$(printf '%s\n' "$replacement" | sed 's/[\/&]/\\&/g')
+
+    # Perform regex replacement and write to new file
+    sed "s/$esc_pattern/$esc_replacement/g" "$file" > "$outfile"
+
+    echo "Created: $outfile"
+}
