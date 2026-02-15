@@ -1,8 +1,4 @@
-# CORE COMMANDS
-alias edit="subl ~/.bashrc && subl ~/bash_functions"
-alias editn="nano ~/.bashrc"
-alias edit_subl="subl ~/.bashrc"
-alias ref=". ~/.bashrc"
+alias lsa="ls -la"
 alias las="ls -la"
 alias rp="cd ~/repos"
 alias ..="cd ../"
@@ -33,14 +29,14 @@ source "$BASH_FUNCTIONS_DIR/node/node.sh"
 source "$BASH_FUNCTIONS_DIR/node/fetcher.sh"
 
 # CORE COMMANDS
-alias edit="$EDITOR ~/.bashrc && $EDITOR ~/bash_functions"
+alias edit="$EDITOR ~/bash_functions && $EDITOR ~/.bashrc"
 alias editn="nano ~/.bashrc"
 alias edit_subl="$EDITOR ~/.bashrc"
 alias ref=". ~/.bashrc"
 alias ..="cd ../"
 alias ...="cd ../../"
 alias bash_functions="$EDITOR ~/bash_functions"
-alias lsa="ls -la"
+
 
 
 # source ./alias.sh
