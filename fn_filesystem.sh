@@ -36,6 +36,50 @@ set_permissions() {
     echo "Permissions set to 755 for directories and 644 for files in $target_directory"
 }
 
+set_wp_permissions_strict() {
+    local target_directory=$1
+    local web_group="www-data" 
+
+    if [ -z "$target_directory" ]; then
+        echo "Usage: set_wp_permissions <directory>"
+        return 1
+    fi
+
+    if [ ! -d "$target_directory" ]; then
+        echo "Error: $target_directory is not a directory."
+        return 1
+    fi
+
+    echo "Starting STRICT permission hardening on $target_directory..."
+
+    # 1. Ensure the group ownership is correct
+    # This is vital so FileBrowser and WP share access
+    chgrp -R "$web_group" "$target_directory"
+
+    # 2. Directories: 2770 
+    # (2) SetGID: New files inherit the www-data group
+    # (7) Owner: Read/Write/Execute
+    # (7) Group: Read/Write/Execute
+    # (0) Others: No access at all
+    find "$target_directory" -type d -exec chmod 2770 {} \;
+
+    # 3. Files: 660
+    # (6) Owner: Read/Write
+    # (6) Group: Read/Write
+    # (0) Others: No access at all
+    find "$target_directory" -type f -exec chmod 660 {} \;
+
+    # 4. Special handling for wp-config.php
+    # Already covered by 660, but explicitly ensuring it stays that way
+    if [ -f "$target_directory/wp-config.php" ]; then
+        chmod 660 "$target_directory/wp-config.php"
+        echo "Confirmed wp-config.php is 660."
+    fi
+
+    echo "Permissions successfully set to 770/660."
+    echo "Note: If you see '403 Forbidden', ensure your Web Server user is in the $web_group group."
+}
+
 
 scp_upload() {
     if [ "$#" -ne 3 ]; then
