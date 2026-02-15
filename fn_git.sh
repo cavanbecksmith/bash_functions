@@ -383,6 +383,7 @@ gclone() {
     local custom_name="$2"
     local repos_dir="$HOME/repos"
     local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+    local jqlocal="$BASH_FUNCTIONS_DIR/jq"  # or just "jq" if it's in your PATH
 
     # Check if git URL was provided
     if [ -z "$git_url" ]; then
@@ -433,7 +434,7 @@ gclone() {
         else
             # Insert into JSON array
             tmp_file=$(mktemp)
-            jq --arg path "$abs_path" '. + [$path]' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
+            "$jqlocal" --arg path "$abs_path" '. + [$path]' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
             echo "✅ Added $abs_path to repos.json"
         fi
 
