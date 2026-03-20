@@ -304,6 +304,11 @@ reposopen(){
 }
 
 repos() {
+    if [[ "$1" == "-h" ]]; then
+        cd ~/repos
+        return 0
+    fi
+
     local json_file="$BASH_FUNCTIONS_DIR/repos.json"
     # local jq="jq.exe"
 

@@ -3,7 +3,14 @@ alias las="ls -la"
 alias rp="cd ~/repos"
 alias ..="cd ../"
 alias ...="cd ../../"
-alias bash_functions="cd $HOME/bash_functions"
+
+bash_functions() {
+    if [[ "$1" == "-h" ]]; then
+        cd ~/bash_functions
+    else
+        $EDITOR ~/bash_functions
+    fi
+}
 
 # Get the directory this script is located in
 BASH_FUNCTIONS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -35,7 +42,6 @@ alias edit_subl="$EDITOR ~/.bashrc"
 alias ref=". ~/.bashrc"
 alias ..="cd ../"
 alias ...="cd ../../"
-alias bash_functions="$EDITOR ~/bash_functions"
 
 
 
