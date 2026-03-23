@@ -476,3 +476,87 @@ lazygit() {
 }
 
 alias lg='lazygit'
+
+worktree() {
+    local action="$1"
+    local branch_name="$2"
+
+    if [ -z "$action" ]; then
+        echo "Usage: worktree <add|remove|change> <branchname>"
+        return 1
+    fi
+
+    # Check if we're in a git repository
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        echo "❌ Error: Not inside a git repository."
+        return 1
+    fi
+
+    local repo_root
+    repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [ -z "$repo_root" ]; then
+        echo "❌ Error: Could not determine repository root."
+        return 1
+    fi
+
+    local parent_dir
+    parent_dir=$(dirname "$repo_root")
+    local target_dir="$parent_dir/$branch_name"
+
+    case "$action" in
+        add)
+            if [ -z "$branch_name" ]; then
+                echo "❌ Error: branchname is required for add"
+                return 1
+            fi
+            echo "➕ Adding worktree for branch '$branch_name' at '$target_dir'..."
+            git worktree add "$target_dir"
+            ;;
+        remove)
+            if [ -z "$branch_name" ]; then
+                echo "❌ Error: branchname is required for remove"
+                return 1
+            fi
+            if [ ! -d "$target_dir" ]; then
+                echo "❌ Error: Worktree directory '$target_dir' does not exist."
+                return 1
+            fi
+            read -p "⚠️ Are you sure you want to remove the worktree for '$branch_name' at '$target_dir'? (y/n): " confirm
+            if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+                git worktree remove "$target_dir"
+                echo "✅ Worktree removed."
+            else
+                echo "❌ Removal cancelled."
+            fi
+            ;;
+        change)
+            if [ -z "$branch_name" ]; then
+                echo "❌ Error: branchname is required for change"
+                return 1
+            fi
+            if [ -d "$target_dir" ]; then
+                echo "📂 Changing to worktree: $target_dir"
+                cd "$target_dir" || echo "❌ Failed to change directory."
+            else
+                # Fallback: check if it's listed in git worktree list
+                local wt_path
+                wt_path=$(git worktree list | grep "\[$branch_name\]" | awk '{print $1}')
+                if [ -n "$wt_path" ] && [ -d "$wt_path" ]; then
+                    echo "📂 Changing to worktree: $wt_path"
+                    cd "$wt_path" || echo "❌ Failed to change directory."
+                else
+                    echo "❌ Error: Worktree directory '$target_dir' does not exist."
+                    return 1
+                fi
+            fi
+            ;;
+        list)
+            git worktree list
+            ;;
+        *)
+            echo "❓ Unknown action: $action"
+            echo "Usage: worktree <add|remove|change> <branchname>"
+            return 1
+            ;;
+    esac
+}
