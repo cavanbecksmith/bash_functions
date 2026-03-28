@@ -49,14 +49,40 @@ notes() {
             fi
             cd "$NOTES_DIRECTORY" && gemini
             ;;
+        "ask")
+            shift # Remove 'ask' from arguments
+            local question="$*"
+            if [[ -z "$question" ]]; then
+                echo "❌ Please provide a question. Usage: notes ask \"your question\""
+                return 1
+            fi
+
+            if [[ ! -d "$NOTES_DIRECTORY" ]]; then
+                # Try to handle Windows style paths in MSYS/Git Bash
+                if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
+                    local unix_path
+                    unix_path=$(cygpath -u "$NOTES_DIRECTORY" 2>/dev/null)
+                    if [[ -d "$unix_path" ]]; then
+                        # Run gemini from that directory
+                        (cd "$unix_path" && gemini -p "$question")
+                        return 0
+                    fi
+                fi
+                echo "❌ Directory not found: $NOTES_DIRECTORY"
+                return 1
+            fi
+            # Run in a subshell so we don't change the current shell's directory
+            (cd "$NOTES_DIRECTORY" && gemini -p "$question")
+            ;;
         "-h"|"--help")
             echo "Notes Helper Command"
             echo "===================="
             echo "Usage:"
-            echo "  notes          - Change directory to your notes folder"
-            echo "  notes obs      - Open your notes folder in Obsidian"
-            echo "  notes g        - Go to notes folder and start Gemini CLI"
-            echo "  notes -h       - Show this help message"
+            echo "  notes               - Change directory to your notes folder"
+            echo "  notes obs           - Open your notes folder in Obsidian"
+            echo "  notes g             - Go to notes folder and start Gemini CLI"
+            echo "  notes ask \"query\"    - Ask Gemini a question about your notes"
+            echo "  notes -h            - Show this help message"
             echo ""
             echo "Configured Directory: $NOTES_DIRECTORY"
             ;;
