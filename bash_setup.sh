@@ -6,6 +6,7 @@ generate_env_file() {
     read -p "Enter a value for APP_ENV (e.g., development, production): " app_env
     read -p "Enter a value for CUSTOM_ENTRYPOINT (/root/entrypoint.sh): " entrypoint
     read -p "Enter a value for code editor (e.g code, nano): " editor
+    read -p "Enter a value for NOTES_DIRECTORY (e.g. C:/Users/anon/Documents/Notes): " notes_dir
     current_user="$USER"
     if [[ -z "$home_dir" ]]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -31,6 +32,7 @@ USER="$current_user"
 HOME_DIRECTORY="$home_dir"
 CUSTOM_ENTRYPOINT="$entrypoint"
 EDITOR="$editor"
+NOTES_DIRECTORY="$notes_dir"
 EOL
     echo ".env file generated successfully."
 }
@@ -91,6 +93,7 @@ env_settings() {
     echo "Current User: $USER"
     echo "SSH_PATH: $SSH_PATH"
     echo "APP_ENV: $APP_ENV"
+    echo "NOTES_DIRECTORY: $NOTES_DIRECTORY"
 }
 
 load_env_file
