@@ -1,4 +1,4 @@
-# BUNK: Bash Utility & Navigation Kit
+# Bash Utility & Navigation Kit
 
 ```
 ██████╗ ██╗   ██╗███╗   ██╗██╗  ██╗
