@@ -1,5 +1,6 @@
 
 # Function aliases
+alias status='git status'
 alias ac='autocommit'
 alias gr='git_reset'
 alias pullr='pull_git_repos'
