@@ -1,4 +1,3 @@
-alias nvm_ls="nvm ls"
 
 migration_date() {
   # Y_m_d_His
