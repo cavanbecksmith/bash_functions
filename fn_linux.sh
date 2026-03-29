@@ -7,7 +7,7 @@ findfiles() {
 
     local pattern="$1"
     shift
-
+    
     local start_dir="$HOME"  # Default to user's home
     if [ "$1" == "--root" ] || [ "$1" == "-r" ]; then
         start_dir="/"
@@ -41,4 +41,10 @@ findfolders() {
     fi
 
     find "$start_dir" -type d -iname "$pattern" 2>/dev/null
+}
+
+hexrand() {
+    local length="${1:-32}"
+    openssl rand -hex $((length / 2)) | head -c "$length"
+    echo
 }

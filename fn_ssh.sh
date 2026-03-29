@@ -1,4 +1,4 @@
-alias sshconf="subl ~/.ssh/"
+alias sshconf="$EDITOR ~/.ssh/"
 
 function keys() {
     ls -la "$SSH_PATH"
