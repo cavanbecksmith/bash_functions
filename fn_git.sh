@@ -353,24 +353,16 @@ repos() {
 
 reposcheck() {
     local json_file="$BASH_FUNCTIONS_DIR/repos.json"
-    local jq="$BASH_FUNCTIONS_DIR/jq"  # or just "jq" if it's in your PATH
-
-    if [ ! -f "$json_file" ]; then
-        echo "❌ repos.json not found: $json_file"
-        return 1
-    fi
-
-    mapfile -t repos < <($jq -r '.[]' "$json_file")
-
-    if [ "${#repos[@]}" -eq 0 ]; then
-        echo "📭 No repos found in $json_file"
-        return 1
-    fi
+    local worktrees_json="$BASH_FUNCTIONS_DIR/worktrees.json"
+    local jq="$BASH_FUNCTIONS_DIR/jq"
 
     echo "🔍 Checking Git status for each repo..."
 
-    for repo in "${repos[@]}"; do
-        # if [ -d "$repo/.git" ]; then
+    # Check repos from repos.json
+    if [ -f "$json_file" ]; then
+        mapfile -t repos < <($jq -r '.[]' "$json_file")
+        
+        for repo in "${repos[@]}"; do
             repo=$(echo "$repo" | xargs)
             cd "$repo" || continue
             if [[ -n $(git status --porcelain) ]]; then
@@ -378,10 +370,26 @@ reposcheck() {
             else
                 echo "✅ Clean:   $repo"
             fi
-        # else
-        #     echo "⚠️ Not a Git repo: $repo"
-        # fi
-    done
+        done
+    fi
+
+    # Check worktrees from worktrees.json
+    if [ -f "$worktrees_json" ]; then
+        mapfile -t worktrees < <($jq -r '.[]' "$worktrees_json")
+        
+        for worktree in "${worktrees[@]}"; do
+            worktree=$(echo "$worktree" | xargs)
+            if [ ! -d "$worktree" ]; then
+                continue
+            fi
+            cd "$worktree" || continue
+            if [[ -n $(git status --porcelain) ]]; then
+                echo "❌ Changes: $worktree"
+            else
+                echo "✅ Clean:   $worktree"
+            fi
+        done
+    fi
 }
 
 gclone() {
@@ -482,6 +490,8 @@ worktree() {
     local action="$1"
     local branch_name="$2"
     local nested=false
+    local worktrees_json="$BASH_FUNCTIONS_DIR/worktrees.json"
+    local jq_cmd="$BASH_FUNCTIONS_DIR/jq"
 
     # Check for --nested flag
     if [[ "$2" == "--nested" || "$2" == "-n" ]]; then
@@ -540,7 +550,23 @@ worktree() {
                 return 1
             fi
             echo "➕ Adding worktree for branch '$branch_name' at '$target_dir'..."
-            git worktree add "$target_dir" "$branch_name"
+            if git worktree add "$target_dir" "$branch_name"; then
+                # Create worktrees.json if it doesn't exist
+                if [ ! -f "$worktrees_json" ]; then
+                    echo "[]" > "$worktrees_json"
+                fi
+                
+                # Get absolute path
+                local abs_path
+                abs_path=$(cd "$target_dir" && pwd)
+                
+                # Add to worktrees.json
+                if ! grep -qF "\"$abs_path\"" "$worktrees_json"; then
+                    tmp_file=$(mktemp)
+                    "$jq_cmd" --arg path "$abs_path" '. + [$path]' "$worktrees_json" > "$tmp_file" && mv "$tmp_file" "$worktrees_json"
+                    echo "✅ Added to worktrees.json"
+                fi
+            fi
             ;;
         remove)
             if [ -z "$branch_name" ]; then
@@ -553,8 +579,20 @@ worktree() {
             fi
             read -p "⚠️ Are you sure you want to remove the worktree for '$branch_name' at '$target_dir'? (y/n): " confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
-                git worktree remove "$target_dir"
-                echo "✅ Worktree removed."
+                # Get absolute path before removing
+                local abs_path
+                abs_path=$(cd "$target_dir" && pwd)
+                
+                if git worktree remove "$target_dir"; then
+                    echo "✅ Worktree removed."
+                    
+                    # Remove from worktrees.json
+                    if [ -f "$worktrees_json" ]; then
+                        tmp_file=$(mktemp)
+                        "$jq_cmd" --arg path "$abs_path" 'map(select(. != $path))' "$worktrees_json" > "$tmp_file" && mv "$tmp_file" "$worktrees_json"
+                        echo "✅ Removed from worktrees.json"
+                    fi
+                fi
             else
                 echo "❌ Removal cancelled."
             fi

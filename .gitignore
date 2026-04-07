@@ -1,5 +1,6 @@
 .env
 repos.json
+worktrees.json
 jq
 jq.exe
 local/*
