@@ -481,9 +481,28 @@ alias lg='lazygit'
 worktree() {
     local action="$1"
     local branch_name="$2"
+    local nested=false
+
+    # Check for --nested flag
+    if [[ "$2" == "--nested" || "$2" == "-n" ]]; then
+        nested=true
+        branch_name="$3"
+    elif [[ "$3" == "--nested" || "$3" == "-n" ]]; then
+        nested=true
+    fi
 
     if [ -z "$action" ]; then
-        echo "Usage: worktree <add|remove|change> <branchname>"
+        echo "Usage: worktree <add|remove|change|pull|list> <branchname> [--nested|-n]"
+        echo ""
+        echo "Actions:"
+        echo "  add      - Create a new worktree for a branch"
+        echo "  remove   - Remove an existing worktree"
+        echo "  change   - Change directory to a worktree"
+        echo "  pull     - Pull changes for the current worktree's branch"
+        echo "  list     - List all worktrees"
+        echo ""
+        echo "Flags:"
+        echo "  --nested, -n  - Use nested directory structure (e.g., feat/branch instead of feat-branch)"
         return 1
     fi
 
@@ -502,7 +521,17 @@ worktree() {
 
     local parent_dir
     parent_dir=$(dirname "$repo_root")
-    local target_dir="$parent_dir/$branch_name"
+    
+    # Determine directory structure based on nested flag
+    local target_dir
+    if [ "$nested" = true ]; then
+        # Nested structure: preserve the / in the path
+        target_dir="$parent_dir/$branch_name"
+    else
+        # Flat structure: replace / with -
+        local dir_name="${branch_name//\//-}"
+        target_dir="$parent_dir/$dir_name"
+    fi
 
     case "$action" in
         add)
@@ -511,7 +540,7 @@ worktree() {
                 return 1
             fi
             echo "➕ Adding worktree for branch '$branch_name' at '$target_dir'..."
-            git worktree add "$target_dir"
+            git worktree add "$target_dir" "$branch_name"
             ;;
         remove)
             if [ -z "$branch_name" ]; then
@@ -551,13 +580,31 @@ worktree() {
                 fi
             fi
             ;;
+        pull)
+            # Pull changes for the current worktree's branch
+            local current_branch
+            current_branch=$(git branch --show-current 2>/dev/null)
+            
+            if [ -z "$current_branch" ]; then
+                echo "❌ Error: Could not determine current branch."
+                return 1
+            fi
+            
+            echo "🔄 Pulling changes for branch '$current_branch'..."
+            git pull origin "$current_branch"
+            ;;
         list)
             git worktree list
             ;;
         *)
             echo "❓ Unknown action: $action"
-            echo "Usage: worktree <add|remove|change> <branchname>"
+            echo "Usage: worktree <add|remove|change|pull|list> <branchname> [--nested|-n]"
             return 1
             ;;
     esac
+}
+
+greauth(){
+   git config --global credential.helper manager
+   git fetch 
 }
