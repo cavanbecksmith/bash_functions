@@ -1,4 +1,3 @@
-
 migration_date() {
   # Y_m_d_His
   local dt=$(date '+%Y_%m_%d_%H%M%S');
@@ -148,4 +147,84 @@ lsb() {
     
     echo "========================="
     echo "💡 Run 'type <function_name>' to see definition"
+}
+
+# Convert RGB to Hex
+# Usage: rgb2hex 255 128 0
+rgb2hex() {
+    if [[ $# -ne 3 ]]; then
+        echo "Usage: rgb2hex R G B"
+        echo "Example: rgb2hex 255 128 0"
+        return 1
+    fi
+    
+    local r=$1
+    local g=$2
+    local b=$3
+    
+    # Validate RGB values are numbers between 0-255
+    if ! [[ "$r" =~ ^[0-9]+$ ]] || ! [[ "$g" =~ ^[0-9]+$ ]] || ! [[ "$b" =~ ^[0-9]+$ ]]; then
+        echo "Error: RGB values must be numbers"
+        return 1
+    fi
+    
+    if [[ $r -lt 0 || $r -gt 255 || $g -lt 0 || $g -gt 255 || $b -lt 0 || $b -gt 255 ]]; then
+        echo "Error: RGB values must be between 0 and 255"
+        return 1
+    fi
+    
+    # Convert to hex
+    printf "#%02X%02X%02X\n" "$r" "$g" "$b"
+}
+
+# Convert Hex to RGB
+# Usage: hex2rgb "#FF8000" or hex2rgb FF8000
+hex2rgb() {
+    if [[ $# -ne 1 ]]; then
+        echo "Usage: hex2rgb <hex_color>"
+        echo "Example: hex2rgb \"#FF8000\" or hex2rgb FF8000"
+        return 1
+    fi
+    
+    local hex="$1"
+    
+    # Remove # if present
+    hex="${hex#\#}"
+    
+    # Validate hex format
+    if ! [[ "$hex" =~ ^[0-9A-Fa-f]{6}$ ]]; then
+        echo "Error: Invalid hex color format. Use 6 hex digits (e.g., FF8000 or #FF8000)"
+        return 1
+    fi
+    
+    # Convert to uppercase for consistency
+    hex="${hex^^}"
+    
+    # Extract RGB values
+    local r=$((16#${hex:0:2}))
+    local g=$((16#${hex:2:2}))
+    local b=$((16#${hex:4:2}))
+    
+    echo "rgb($r, $g, $b)"
+}
+
+# Convert RGB to Hex or Hex to RGB (auto-detect)
+# Usage: color_convert 255 128 0 or color_convert "#FF8000"
+color_convert() {
+    if [[ $# -eq 1 ]]; then
+        # Assume hex to RGB
+        hex2rgb "$1"
+    elif [[ $# -eq 3 ]]; then
+        # Assume RGB to hex
+        rgb2hex "$1" "$2" "$3"
+    else
+        echo "Usage:"
+        echo "  color_convert R G B          # Convert RGB to hex"
+        echo "  color_convert <hex_color>    # Convert hex to RGB"
+        echo ""
+        echo "Examples:"
+        echo "  color_convert 255 128 0"
+        echo "  color_convert \"#FF8000\""
+        return 1
+    fi
 }
