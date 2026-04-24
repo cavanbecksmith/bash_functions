@@ -485,6 +485,11 @@ lazygit() {
 }
 
 alias lg='lazygit'
+alias wt='worktree'
+alias wtc='worktree change'
+alias wta='worktree add'
+alias wtr='worktree remove'
+alias wtl='worktree list'
 
 worktree() {
     local action="$1"
@@ -549,23 +554,52 @@ worktree() {
                 echo "❌ Error: branchname is required for add"
                 return 1
             fi
+            
+            # Check if branch exists (locally or remotely)
+            local branch_exists=false
+            if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+                branch_exists=true
+                echo "ℹ️  Branch '$branch_name' exists locally"
+            elif git show-ref --verify --quiet "refs/remotes/origin/$branch_name"; then
+                branch_exists=true
+                echo "ℹ️  Branch '$branch_name' exists on remote"
+            fi
+            
             echo "➕ Adding worktree for branch '$branch_name' at '$target_dir'..."
-            if git worktree add "$target_dir" "$branch_name"; then
-                # Create worktrees.json if it doesn't exist
-                if [ ! -f "$worktrees_json" ]; then
-                    echo "[]" > "$worktrees_json"
+            
+            # If branch doesn't exist, create it
+            if [ "$branch_exists" = false ]; then
+                echo "📝 Branch does not exist. Creating new branch '$branch_name'..."
+                if git worktree add -b "$branch_name" "$target_dir"; then
+                    echo "✅ Created new branch and worktree"
+                else
+                    echo "❌ Failed to create worktree"
+                    return 1
                 fi
-                
-                # Get absolute path
-                local abs_path
-                abs_path=$(cd "$target_dir" && pwd)
-                
-                # Add to worktrees.json
-                if ! grep -qF "\"$abs_path\"" "$worktrees_json"; then
-                    tmp_file=$(mktemp)
-                    "$jq_cmd" --arg path "$abs_path" '. + [$path]' "$worktrees_json" > "$tmp_file" && mv "$tmp_file" "$worktrees_json"
-                    echo "✅ Added to worktrees.json"
+            else
+                # Branch exists, just add the worktree
+                if git worktree add "$target_dir" "$branch_name"; then
+                    echo "✅ Created worktree for existing branch"
+                else
+                    echo "❌ Failed to create worktree"
+                    return 1
                 fi
+            fi
+            
+            # Create worktrees.json if it doesn't exist
+            if [ ! -f "$worktrees_json" ]; then
+                echo "[]" > "$worktrees_json"
+            fi
+            
+            # Get absolute path
+            local abs_path
+            abs_path=$(cd "$target_dir" && pwd)
+            
+            # Add to worktrees.json
+            if ! grep -qF "\"$abs_path\"" "$worktrees_json"; then
+                tmp_file=$(mktemp)
+                "$jq_cmd" --arg path "$abs_path" '. + [$path]' "$worktrees_json" > "$tmp_file" && mv "$tmp_file" "$worktrees_json"
+                echo "✅ Added to worktrees.json"
             fi
             ;;
         remove)
@@ -597,24 +631,55 @@ worktree() {
                 echo "❌ Removal cancelled."
             fi
             ;;
-        change)
+        change|c)
             if [ -z "$branch_name" ]; then
-                echo "❌ Error: branchname is required for change"
-                return 1
-            fi
-            if [ -d "$target_dir" ]; then
-                echo "📂 Changing to worktree: $target_dir"
-                cd "$target_dir" || echo "❌ Failed to change directory."
-            else
-                # Fallback: check if it's listed in git worktree list
-                local wt_path
-                wt_path=$(git worktree list | grep "\[$branch_name\]" | awk '{print $1}')
-                if [ -n "$wt_path" ] && [ -d "$wt_path" ]; then
-                    echo "📂 Changing to worktree: $wt_path"
-                    cd "$wt_path" || echo "❌ Failed to change directory."
-                else
-                    echo "❌ Error: Worktree directory '$target_dir' does not exist."
+                # No branch specified - show interactive list
+                mapfile -t wt_list < <(git worktree list --porcelain | grep -E '^worktree|^branch' | paste -d ' ' - - | sed 's/worktree //; s/branch //')
+                
+                if [ "${#wt_list[@]}" -eq 0 ]; then
+                    echo "❌ No worktrees found."
                     return 1
+                fi
+                
+                echo "📁 Available Worktrees:"
+                local wt_paths=()
+                local wt_branches=()
+                for i in "${!wt_list[@]}"; do
+                    local wt_info="${wt_list[$i]}"
+                    local wt_path=$(echo "$wt_info" | awk '{print $1}')
+                    local wt_branch=$(echo "$wt_info" | awk '{print $2}' | sed 's|refs/heads/||')
+                    wt_paths+=("$wt_path")
+                    wt_branches+=("$wt_branch")
+                    printf "[%d] %s (%s)\n" "$((i + 1))" "$wt_branch" "$wt_path"
+                done
+                
+                echo -n "🔢 Enter a number to cd into that worktree: "
+                read -r choice
+                
+                if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#wt_paths[@]}" ]; then
+                    echo "❌ Invalid selection."
+                    return 1
+                fi
+                
+                local selected_path="${wt_paths[$((choice - 1))]}"
+                echo "📂 Changing to worktree: $selected_path"
+                cd "$selected_path" || echo "❌ Failed to change directory."
+            else
+                # Branch name specified - use existing logic
+                if [ -d "$target_dir" ]; then
+                    echo "📂 Changing to worktree: $target_dir"
+                    cd "$target_dir" || echo "❌ Failed to change directory."
+                else
+                    # Fallback: check if it's listed in git worktree list
+                    local wt_path
+                    wt_path=$(git worktree list | grep "\[$branch_name\]" | awk '{print $1}')
+                    if [ -n "$wt_path" ] && [ -d "$wt_path" ]; then
+                        echo "📂 Changing to worktree: $wt_path"
+                        cd "$wt_path" || echo "❌ Failed to change directory."
+                    else
+                        echo "❌ Error: Worktree directory '$target_dir' does not exist."
+                        return 1
+                    fi
                 fi
             fi
             ;;
