@@ -166,8 +166,8 @@ push_git_repos() {
 
 repoadd() {
     local repo_path="${1:-.}"  # Default to current directory if no argument
-    local json_file="$BASH_FUNCTION_DIR/repos.json"
-    local jq_cmd="$BASH_FUNCTION_DIR/jq"
+    local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+    local jq_cmd="$BASH_FUNCTIONS_DIR/jq"
 
     # Create file if it doesn't exist
     if [ ! -f "$json_file" ]; then
@@ -203,8 +203,8 @@ repoadd() {
 
 
 repodel() {
-    local json_file="$BASH_FUNCTION_DIR/repos.json"
-    local jq_cmd="$BASH_FUNCTION_DIR/jq"
+    local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+    local jq_cmd="$BASH_FUNCTIONS_DIR/jq"
     local hard_delete=false
 
     # Check for hard delete flag
@@ -311,44 +311,70 @@ repos() {
     fi
 
     local json_file="$BASH_FUNCTIONS_DIR/repos.json"
-    # local jq="jq.exe"
+    local worktrees_json="$BASH_FUNCTIONS_DIR/worktrees.json"
+    local jq_cmd="$BASH_FUNCTIONS_DIR/jq"
 
-    if [ ! -f "$json_file" ]; then
-        echo "❌ $json_file not found."
+    # Read repos
+    local repos=()
+    if [ -f "$json_file" ]; then
+        mapfile -t repos < <("$jq_cmd" -r '.[]' "$json_file")
+    fi
+
+    # Read worktrees
+    local worktrees=()
+    if [ -f "$worktrees_json" ]; then
+        mapfile -t worktrees < <("$jq_cmd" -r '.[]' "$worktrees_json")
+    fi
+
+    # Check if both are empty
+    if [ "${#repos[@]}" -eq 0 ] && [ "${#worktrees[@]}" -eq 0 ]; then
+        echo "📭 No repos or worktrees found."
         return 1
     fi
 
-    # Read and parse repo list
-    mapfile -t repos < <($BASH_FUNCTIONS_DIR/jq -r '.[]' "$json_file")
+    # Combine all paths
+    local all_paths=()
+    local counter=1
 
-    if [ "${#repos[@]}" -eq 0 ]; then
-        echo "📭 No repos found in $json_file."
-        return 1
+    # Display repositories
+    if [ "${#repos[@]}" -gt 0 ]; then
+        echo "📁 Repositories:"
+        for repo in "${repos[@]}"; do
+            all_paths+=("$repo")
+            printf "  [%d] %s\n" "$counter" "$repo"
+            ((counter++))
+        done
+        echo ""
     fi
 
-    echo "📁 Available Repos:"
-    for i in "${!repos[@]}"; do
-        printf "[%d] %s\n" "$((i + 1))" "${repos[$i]}"
-    done
+    # Display worktrees
+    if [ "${#worktrees[@]}" -gt 0 ]; then
+        echo "🌳 Worktrees:"
+        for worktree in "${worktrees[@]}"; do
+            all_paths+=("$worktree")
+            printf "  [%d] %s\n" "$counter" "$worktree"
+            ((counter++))
+        done
+        echo ""
+    fi
 
-    echo -n "🔢 Enter a number to cd into that repo: "
+    echo -n "🔢 Enter a number to cd into that location: "
     read -r choice
 
-    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#repos[@]}" ]; then
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#all_paths[@]}" ]; then
         echo "❌ Invalid selection."
         return 1
     fi
 
-    local selected="${repos[$((choice - 1))]}"
-    echo $selected
-    trimmed=$(echo "$selected" | xargs)
-    # if [ -d "$selected" ]; then
-    echo "📂 Changing directory to: $selected"
-    cd $trimmed # || return 1
-    # else
-    #     echo "⚠️ Directory does not exist: $selected"
-    #     return 1
-    # fi
+    local selected="${all_paths[$((choice - 1))]}"
+    
+    if [ -d "$selected" ]; then
+        echo "📂 Changing directory to: $selected"
+        cd "$selected"
+    else
+        echo "⚠️ Directory does not exist: $selected"
+        return 1
+    fi
 }
 
 reposcheck() {
@@ -356,39 +382,42 @@ reposcheck() {
     local worktrees_json="$BASH_FUNCTIONS_DIR/worktrees.json"
     local jq="$BASH_FUNCTIONS_DIR/jq"
 
-    echo "🔍 Checking Git status for each repo..."
-
     # Check repos from repos.json
     if [ -f "$json_file" ]; then
-        mapfile -t repos < <($jq -r '.[]' "$json_file")
+        mapfile -t repos < <("$jq" -r '.[]' "$json_file")
         
-        for repo in "${repos[@]}"; do
-            repo=$(echo "$repo" | xargs)
-            cd "$repo" || continue
-            if [[ -n $(git status --porcelain) ]]; then
-                echo "❌ Changes: $repo"
-            else
-                echo "✅ Clean:   $repo"
-            fi
-        done
+        if [ "${#repos[@]}" -gt 0 ]; then
+            echo "📁 Repositories:"
+            for repo in "${repos[@]}"; do
+                repo=$(echo "$repo" | xargs)
+                cd "$repo" 2>/dev/null || continue
+                if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
+                    echo "  ❌ Changes: $repo"
+                else
+                    echo "  ✅ Clean:   $repo"
+                fi
+            done
+            echo ""
+        fi
     fi
 
     # Check worktrees from worktrees.json
     if [ -f "$worktrees_json" ]; then
-        mapfile -t worktrees < <($jq -r '.[]' "$worktrees_json")
+        mapfile -t worktrees < <("$jq" -r '.[]' "$worktrees_json")
         
-        for worktree in "${worktrees[@]}"; do
-            worktree=$(echo "$worktree" | xargs)
-            if [ ! -d "$worktree" ]; then
-                continue
-            fi
-            cd "$worktree" || continue
-            if [[ -n $(git status --porcelain) ]]; then
-                echo "❌ Changes: $worktree"
-            else
-                echo "✅ Clean:   $worktree"
-            fi
-        done
+        if [ "${#worktrees[@]}" -gt 0 ]; then
+            echo "🌳 Worktrees:"
+            for worktree in "${worktrees[@]}"; do
+                worktree=$(echo "$worktree" | xargs)
+                [ -d "$worktree" ] || continue
+                cd "$worktree" 2>/dev/null || continue
+                if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
+                    echo "  ❌ Changes: $worktree"
+                else
+                    echo "  ✅ Clean:   $worktree"
+                fi
+            done
+        fi
     fi
 }
 
