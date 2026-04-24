@@ -1,4 +1,3 @@
-
 # Function aliases
 alias status='git status'
 alias ac='autocommit'

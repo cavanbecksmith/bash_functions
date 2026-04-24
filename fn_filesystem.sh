@@ -1,4 +1,3 @@
-
 # ====== NETWORKING
 
 # Example usage LINUX / WIN
@@ -102,6 +101,73 @@ scp_upload() {
     else
         echo "File upload failed"
         return 1
+    fi
+}
+
+
+nav() {
+    local search_term="$1"
+    
+    if [ -z "$search_term" ]; then
+        # No argument - show interactive list of directories
+        mapfile -t dirs < <(find . -maxdepth 1 -type d ! -name '.' | sort)
+        
+        if [ "${#dirs[@]}" -eq 0 ]; then
+            echo "📭 No directories found in current location."
+            return 1
+        fi
+        
+        echo "📁 Directories:"
+        for i in "${!dirs[@]}"; do
+            # Remove leading ./
+            local clean_name="${dirs[$i]#./}"
+            printf "  [%d] %s\n" "$((i + 1))" "$clean_name"
+        done
+        
+        echo -n "🔢 Enter a number to cd into that directory: "
+        read -r choice
+        
+        if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#dirs[@]}" ]; then
+            echo "❌ Invalid selection."
+            return 1
+        fi
+        
+        local selected="${dirs[$((choice - 1))]}"
+        echo "📂 Changing to: $selected"
+        cd "$selected"
+    else
+        # Partial match search - matches anywhere in the name
+        mapfile -t matches < <(find . -maxdepth 1 -type d ! -name '.' | grep -i "$search_term" | sort)
+        
+        if [ "${#matches[@]}" -eq 0 ]; then
+            echo "❌ No directories matching '$search_term' found."
+            return 1
+        elif [ "${#matches[@]}" -eq 1 ]; then
+            # Single match - go directly
+            local clean_name="${matches[0]#./}"
+            echo "📂 Changing to: $clean_name"
+            cd "${matches[0]}"
+        else
+            # Multiple matches - show selection
+            echo "📁 Directories matching '$search_term':"
+            for i in "${!matches[@]}"; do
+                local clean_name="${matches[$i]#./}"
+                printf "  [%d] %s\n" "$((i + 1))" "$clean_name"
+            done
+            
+            echo -n "🔢 Enter a number to cd into that directory: "
+            read -r choice
+            
+            if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#matches[@]}" ]; then
+                echo "❌ Invalid selection."
+                return 1
+            fi
+            
+            local selected="${matches[$((choice - 1))]}"
+            local clean_name="${selected#./}"
+            echo "📂 Changing to: $clean_name"
+            cd "$selected"
+        fi
     fi
 }
 
