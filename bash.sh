@@ -45,21 +45,7 @@ alias ref=". ~/.bashrc"
 alias ..="cd ../"
 alias ...="cd ../../"
 
-
-
-# source ./alias.sh
-# source ~/bash_functions/bash_setup.sh
-# source ~/bash_functions/fn_docker.sh
-# source ~/bash_functions/fn_database.sh
-# source ~/bash_functions/fn_filesystem.sh
-# source ~/bash_functions/fn_git.sh
-# source ~/bash_functions/fn_linux.sh
-# source ~/bash_functions/fn_misc.sh
-# source ~/bash_functions/fn_networking.sh
-# source ~/bash_functions/fn_scraper.sh
-# source ~/bash_functions/fn_ssh.sh
-# source ~/bash_functions/fn_filesystem.sh
-
+# Windows
 if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
 	# source ~/bash_functions/fn_windows.sh
 	source "$BASH_FUNCTIONS_DIR/fn_windows.sh"
