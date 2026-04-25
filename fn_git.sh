@@ -366,14 +366,13 @@ repos() {
     fi
 
     local selected="${all_paths[$((choice - 1))]}"
+    selected=$(echo "$selected" | xargs)  # Trim whitespace
     
-    if [ -d "$selected" ]; then
-        echo "📂 Changing directory to: $selected"
-        cd "$selected"
-    else
-        echo "⚠️ Directory does not exist: $selected"
+    echo "📂 Changing directory to: $selected"
+    cd "$selected" || {
+        echo "❌ Failed to change directory to: $selected"
         return 1
-    fi
+    }
 }
 
 reposcheck() {
