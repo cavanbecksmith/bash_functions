@@ -104,3 +104,21 @@ notes() {
             ;;
     esac
 }
+
+# ====== ASK GEMINI
+
+ask() {
+    local question="$*"
+    
+    if [[ -z "$question" || "$question" == "-h" || "$question" == "--help" ]]; then
+        echo "Ask Gemini CLI"
+        echo "==============="
+        echo "Usage: ask <your question>"
+        echo "Example: ask how do I list files in linux?"
+        return 0
+    fi
+
+    # Execute gemini with the provided question as a prompt
+    gemini -p "$question"
+}
+
