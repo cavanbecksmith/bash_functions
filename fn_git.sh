@@ -534,18 +534,17 @@ worktree() {
     fi
 
     if [ -z "$action" ]; then
-        echo "Usage: worktree <add|remove|change|pull|list> <branchname> [--nested|-n] [--delete-branch|-d]"
+        echo "Usage: worktree <add|remove|change|pull|list> <branchname> [--nested|-n]"
         echo ""
         echo "Actions:"
         echo "  add      - Create a new worktree for a branch"
-        echo "  remove   - Remove an existing worktree"
+        echo "  remove   - Remove worktree, delete directory, and delete local branch"
         echo "  change|c - Change directory to a worktree (interactive if no branch specified)"
         echo "  pull     - Pull changes for the current worktree's branch"
         echo "  list     - List all worktrees"
         echo ""
         echo "Flags:"
-        echo "  --nested, -n        - Use nested directory structure (e.g., feat/branch instead of feat-branch)"
-        echo "  --delete-branch, -d - (remove only) Also delete the LOCAL branch"
+        echo "  --nested, -n  - Use nested directory structure (e.g., feat/branch instead of feat-branch)"
         echo ""
         echo "Aliases:"
         echo "  wt   - worktree"
@@ -557,8 +556,7 @@ worktree() {
         echo "Examples:"
         echo "  worktree add feat/new-feature           # Create new branch and worktree"
         echo "  worktree add --nested feat/new-feature  # Create with nested directory"
-        echo "  worktree remove feat/new-feature        # Remove worktree only"
-        echo "  worktree remove -d feat/new-feature     # Remove worktree AND delete branch"
+        echo "  worktree remove feat/new-feature        # Remove worktree, folder, and branch"
         echo "  worktree change feat/new-feature        # Switch to worktree"
         echo "  worktree change                         # Interactive selection"
         echo "  wtc                                     # Quick interactive selection"
@@ -647,16 +645,6 @@ worktree() {
             fi
             ;;
         remove)
-            local delete_branch=false
-            
-            # Check for --delete-branch flag
-            if [[ "$branch_name" == "--delete-branch" || "$branch_name" == "-d" ]]; then
-                delete_branch=true
-                branch_name="$3"
-            elif [[ "$3" == "--delete-branch" || "$3" == "-d" ]]; then
-                delete_branch=true
-            fi
-            
             if [ -z "$branch_name" ]; then
                 echo "❌ Error: branchname is required for remove"
                 return 1
@@ -666,53 +654,50 @@ worktree() {
                 return 1
             fi
             
-            if [ "$delete_branch" = true ]; then
-                read -p "⚠️ Remove worktree AND DELETE LOCAL branch '$branch_name'? (y/n): " confirm
-            else
-                read -p "⚠️ Are you sure you want to remove the worktree for '$branch_name' at '$target_dir'? (y/n): " confirm
-            fi
+            read -p "⚠️ Remove worktree AND DELETE LOCAL branch '$branch_name'? (y/n): " confirm
             
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                 # Get absolute path before removing
                 local abs_path
                 abs_path=$(cd "$target_dir" && pwd)
                 
-                # Change to parent directory to avoid locking issues
-                cd "$parent_dir" 2>/dev/null || cd "$repo_root" 2>/dev/null
-                
-                # Try to remove, use --force if it fails
-                if ! git worktree remove "$target_dir" 2>/dev/null; then
+                # Try to remove with git worktree from repo root, use --force if it fails
+                if ! git -C "$repo_root" worktree remove "$target_dir" 2>/dev/null; then
                     echo "⚠️  Worktree has modified files. Using --force..."
-                    if ! git worktree remove --force "$target_dir" 2>/dev/null; then
-                        echo "⚠️  Git worktree remove failed. Running prune to clean up metadata..."
+                    if ! git -C "$repo_root" worktree remove --force "$target_dir" 2>/dev/null; then
+                        echo "⚠️  Git worktree remove failed. Running prune and force deleting directory..."
                         # Clean up git's worktree metadata
-                        git worktree prune 2>/dev/null
-                        echo "❌ Failed to remove worktree. Try closing any programs using files in that directory, then run: git worktree prune"
-                        return 1
+                        git -C "$repo_root" worktree prune 2>/dev/null
+                    fi
+                fi
+                
+                # Force delete the directory if it still exists
+                if [ -d "$target_dir" ]; then
+                    echo "🗑️  Force deleting directory: $target_dir"
+                    rm -rf "$target_dir"
+                    if [ -d "$target_dir" ]; then
+                        echo "⚠️  Failed to delete directory. It may be locked by another process."
+                        echo "💡 Tip: Close any programs using files in that directory, then run: rm -rf '$target_dir'"
                     else
-                        echo "✅ Worktree force removed."
+                        echo "✅ Directory deleted."
                     fi
                 else
                     echo "✅ Worktree removed."
                 fi
                 
-                # Remove from worktrees.json
+                # Always remove from worktrees.json
                 if [ -f "$worktrees_json" ]; then
                     tmp_file=$(mktemp)
                     "$jq_cmd" --arg path "$abs_path" 'map(select(. != $path))' "$worktrees_json" > "$tmp_file" && mv "$tmp_file" "$worktrees_json"
                     echo "✅ Removed from worktrees.json"
                 fi
                 
-                # Delete branch if flag is set
-                if [ "$delete_branch" = true ]; then
-                    echo "🗑️  Deleting local branch '$branch_name'..."
-                    
-                    # Delete local branch only
-                    if git branch -D "$branch_name" 2>/dev/null; then
-                        echo "✅ Deleted local branch '$branch_name'"
-                    else
-                        echo "⚠️  Local branch '$branch_name' may not exist or already deleted"
-                    fi
+                # Delete local branch AFTER removing worktree (use git -C to run from repo context)
+                echo "🗑️  Deleting local branch '$branch_name'..."
+                if git -C "$repo_root" branch -D "$branch_name" 2>/dev/null; then
+                    echo "✅ Deleted local branch '$branch_name'"
+                else
+                    echo "⚠️  Local branch '$branch_name' may not exist or already deleted"
                 fi
             else
                 echo "❌ Removal cancelled."
