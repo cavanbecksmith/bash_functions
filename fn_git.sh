@@ -10,6 +10,7 @@ alias rpo='repos'
 alias rpoo='reposopen'
 alias rpc='reposcheck'
 alias gc='gclone'
+alias rpn='reponew'
 # alias addr='add_repo'
 
 function autocommit() {
@@ -487,7 +488,59 @@ gclone() {
     fi
 }
 
-alias repos_edit="$EDITOR $BASH_FUNCTIONS_DIR/repos.json && $EDITOR $BASH_FUNCTIONS_DIR/worktrees.json"
+reponew() {
+    local name="$1"
+    local is_wt=false
+    
+    # Parse arguments
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --wt|-w) is_wt=true ;;
+            *) [ -z "$name" ] && name="$1" ;;
+        esac
+        shift
+    done
+
+    if [ -z "$name" ]; then
+        echo "❌ Usage: reponew <repo-name> [--wt|-w]"
+        return 1
+    fi
+
+    local repos_root="$HOME/repos"
+    local worktrees_root="$HOME/worktrees"
+    local final_repo_path
+
+    if [ "$is_wt" = true ]; then
+        # Worktree structure: ~/worktrees/repo-name/main
+        final_repo_path="$worktrees_root/$name/main"
+        echo "📂 Creating worktree project: $name"
+    else
+        # Normal structure: ~/repos/repo-name
+        final_repo_path="$repos_root/$name"
+        echo "📂 Creating new project: $name"
+    fi
+
+    # Create directories
+    if [ ! -d "$final_repo_path" ]; then
+        mkdir -p "$final_repo_path"
+    fi
+    
+    # Change to directory
+    cd "$final_repo_path" || { echo "❌ Failed to enter directory $final_repo_path"; return 1; }
+
+    # Initialize Git
+    if [ ! -d ".git" ]; then
+        git init
+        echo "✅ Git repository initialized."
+    else
+        echo "ℹ️ Git repository already initialized."
+    fi
+
+    # Add to repos.json
+    repoadd .
+}
+
+alias repos_edit="$EDITOR $BASH_FUNCTIONS_DIR/repos.json"
 alias gitlog="git log --oneline"
 
 alias lazygit_install="$BASH_FUNCTIONS_DIR/apps/lazygit/install_lazygit.sh"
