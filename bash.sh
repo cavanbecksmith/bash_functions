@@ -42,6 +42,7 @@ alias edit="$EDITOR ~/bash_functions && $EDITOR ~/.bashrc"
 alias editn="nano ~/.bashrc"
 alias edit_subl="$EDITOR ~/.bashrc"
 alias ref=". ~/.bashrc"
+alias ide="$EDITOR $@"
 alias ..="cd ../"
 alias ...="cd ../../"
 
