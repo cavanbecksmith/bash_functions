@@ -11,6 +11,7 @@ alias rpoo='reposopen'
 alias rpc='reposcheck'
 alias gc='gclone'
 alias rpn='reponew'
+alias gfetch='git fetch --all'
 # alias addr='add_repo'
 
 function autocommit() {
@@ -834,5 +835,106 @@ worktree() {
 
 greauth(){
    git config --global credential.helper manager
-   git fetch 
+   git fetch
+}
+
+gitm() {
+    trap 'echo ""; echo "Cancelled."; trap - INT; return 1' INT
+
+    echo ""
+    echo "Git Branch Manager"
+    echo "------------------"
+    echo "[1] Switch branch"
+    echo "[2] Delete branch"
+    echo "[3] List local branches"
+    echo ""
+    read -rp "Choose an option: " option
+
+    case "$option" in
+        1)
+            echo ""
+            echo "Available branches:"
+            echo ""
+
+            local branches=()
+            while IFS= read -r line; do
+                branches+=("$line")
+            done < <(git branch -a 2>/dev/null | sed 's/^[ *]*//' | grep -v 'HEAD ->' | sort -u)
+
+            if [ "${#branches[@]}" -eq 0 ]; then
+                echo "No branches found."
+                return 1
+            fi
+
+            for i in "${!branches[@]}"; do
+                printf "[%d] %s\n" "$((i + 1))" "${branches[$i]}"
+            done
+
+            echo ""
+            read -rp "Enter branch number to switch to: " choice
+
+            if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#branches[@]}" ]; then
+                echo "Invalid selection."
+                return 1
+            fi
+
+            local selected="${branches[$((choice - 1))]}"
+            # Strip remote prefix (e.g. remotes/origin/) for checkout
+            local checkout_name
+            checkout_name=$(echo "$selected" | sed 's|remotes/[^/]*/||')
+            git checkout "$checkout_name"
+            ;;
+
+        2)
+            echo ""
+            echo "Available local branches:"
+            echo ""
+
+            local branches=()
+            while IFS= read -r line; do
+                branches+=("$line")
+            done < <(git branch 2>/dev/null | sed 's/^[ *]*//' | sort)
+
+            if [ "${#branches[@]}" -eq 0 ]; then
+                echo "No local branches found."
+                return 1
+            fi
+
+            for i in "${!branches[@]}"; do
+                printf "[%d] %s\n" "$((i + 1))" "${branches[$i]}"
+            done
+
+            echo ""
+            read -rp "Enter branch number to delete: " choice
+
+            if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#branches[@]}" ]; then
+                echo "Invalid selection."
+                return 1
+            fi
+
+            local selected="${branches[$((choice - 1))]}"
+            echo ""
+            read -rp "Are you sure you want to delete branch '$selected'? (y/n): " confirm
+
+            if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+                git branch -D "$selected"
+            else
+                echo "Cancelled."
+            fi
+            ;;
+
+        3)
+            echo ""
+            echo "Local branches:"
+            echo ""
+            git branch | sed 's/^[ *]*//' | sort | nl -w2 -s') '
+            ;;
+
+        *)
+            echo "Invalid option."
+            trap - INT
+            return 1
+            ;;
+    esac
+    trap - INT
 }
