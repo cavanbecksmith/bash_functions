@@ -1,12 +1,12 @@
 
 function docker_stop_all(){
-  docker stop $(docker ps -q)
+  ${CONTAINER_ENGINE:-docker} stop $(${CONTAINER_ENGINE:-docker} ps -q)
 }
 
 function docker_networks(){
-for network in $(docker network ls -q); do
+for network in $(${CONTAINER_ENGINE:-docker} network ls -q); do
   echo "Network ID: $network"
-  docker network inspect $network --format '{{.Name}}: {{range .IPAM.Config}}{{.Subnet}} (Gateway: {{.Gateway}}){{end}}'
+  ${CONTAINER_ENGINE:-docker} network inspect $network --format '{{.Name}}: {{range .IPAM.Config}}{{.Subnet}} (Gateway: {{.Gateway}}){{end}}'
 done
 }
 
@@ -26,7 +26,7 @@ docker_backup_volume() {
   local backup_path=$2
 
   # Create a temporary container to access the volume
-  local container_id=$(docker run --rm -d \
+  local container_id=$(${CONTAINER_ENGINE:-docker} run --rm -d \
     -v ${volume_name}:/volume \
     alpine:latest tail -f /dev/null)
 
@@ -37,11 +37,11 @@ docker_backup_volume() {
 
   echo "Backing up volume '${volume_name}' to '${backup_path}'..."
   # Create the backup
-  docker exec $container_id tar -czf /backup.tar.gz -C /volume .
+  ${CONTAINER_ENGINE:-docker} exec $container_id tar -czf /backup.tar.gz -C /volume .
   # Copy the backup archive to the host
-  docker cp $container_id:/backup.tar.gz ${backup_path}
+  ${CONTAINER_ENGINE:-docker} cp $container_id:/backup.tar.gz ${backup_path}
   # Clean up
-  docker stop $container_id >/dev/null
+  ${CONTAINER_ENGINE:-docker} stop $container_id >/dev/null
   echo "Backup completed successfully. File saved at '${backup_path}'."
 }
 
@@ -56,7 +56,7 @@ docker_restore_volume() {
   fi
 
   # Create a temporary container to restore the volume
-  local container_id=$(docker run --rm -d \
+  local container_id=$(${CONTAINER_ENGINE:-docker} run --rm -d \
     -v ${volume_name}:/volume \
     alpine:latest tail -f /dev/null)
 
@@ -67,11 +67,11 @@ docker_restore_volume() {
 
   echo "Restoring backup from '${backup_path}' to volume '${volume_name}'..."
   # Copy the backup archive to the container
-  docker cp ${backup_path} $container_id:/backup.tar.gz
+  ${CONTAINER_ENGINE:-docker} cp ${backup_path} $container_id:/backup.tar.gz
   # Extract the backup into the volume
-  docker exec $container_id tar -xzf /backup.tar.gz -C /volume
+  ${CONTAINER_ENGINE:-docker} exec $container_id tar -xzf /backup.tar.gz -C /volume
   # Clean up
-  docker stop $container_id >/dev/null
+  ${CONTAINER_ENGINE:-docker} stop $container_id >/dev/null
   echo "Restore completed successfully."
 }
 
@@ -89,7 +89,7 @@ docker_backup_all_volumes() {
   mkdir -p "$backup_dir"
 
   echo "🔍 Finding all Docker volumes..."
-  local volumes=$(docker volume ls -q)
+  local volumes=$(${CONTAINER_ENGINE:-docker} volume ls -q)
 
   if [ -z "$volumes" ]; then
     echo "No Docker volumes found to back up."
@@ -127,7 +127,7 @@ docker_restore_all_volumes() {
     local volume_name="${filename%.tar.gz}"
 
     # Create the volume if it doesn't exist
-    docker volume inspect "$volume_name" >/dev/null 2>&1 || docker volume create "$volume_name"
+    ${CONTAINER_ENGINE:-docker} volume inspect "$volume_name" >/dev/null 2>&1 || ${CONTAINER_ENGINE:-docker} volume create "$volume_name"
 
     echo "📦 Restoring volume: $volume_name from $backup_file"
     docker_restore_volume "$volume_name" "$backup_file"

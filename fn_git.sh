@@ -859,7 +859,7 @@ gitm() {
             local branches=()
             while IFS= read -r line; do
                 branches+=("$line")
-            done < <(git branch -a 2>/dev/null | sed 's/^[ *]*//' | grep -v 'HEAD ->' | sort -u)
+            done < <(git branch 2>/dev/null | sed 's/^[ *]*//' | grep -v 'HEAD ->' | sort -u)
 
             if [ "${#branches[@]}" -eq 0 ]; then
                 echo "No branches found."

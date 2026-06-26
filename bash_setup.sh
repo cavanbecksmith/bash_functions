@@ -7,12 +7,14 @@ generate_env_file() {
     read -p "Enter a value for CUSTOM_ENTRYPOINT (/root/entrypoint.sh): " entrypoint
     read -p "Enter a value for code editor (e.g code, nano): " editor
     read -p "Enter a value for NOTES_DIRECTORY (e.g. C:/Users/anon/Documents/Notes): " notes_dir
+    read -p "Container engine - docker or podman (Leave empty for docker): " container_engine
+    container_engine="${container_engine:-docker}"
     current_user="$USER"
     if [[ -z "$home_dir" ]]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             home_dir="/home/$current_user"
-        elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then        
-            if [[ -z "$current_user" ]]; then 
+        elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
+            if [[ -z "$current_user" ]]; then
                 current_user="$USERNAME"
             fi
             home_dir="C://Users/$current_user"
@@ -33,6 +35,7 @@ HOME_DIRECTORY="$home_dir"
 CUSTOM_ENTRYPOINT="$entrypoint"
 EDITOR="$editor"
 NOTES_DIRECTORY="$notes_dir"
+CONTAINER_ENGINE="$container_engine"
 EOL
     echo ".env file generated successfully."
 }
