@@ -1,4 +1,179 @@
 
+# =================== CONTAINER MANAGER
+
+_dockm_containers() {
+    local engine="$1"
+
+    echo ""
+    echo "Fetching container stats..."
+
+    declare -A _cpu _mem
+    while IFS=$'\t' read -r id cpu mem; do
+        _cpu["$id"]="$cpu"
+        _mem["$id"]="$mem"
+    done < <("$engine" stats --no-stream --format $'{{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}' 2>/dev/null)
+
+    local ids=() names=() images=() statuses=() ports=()
+    while IFS=$'\t' read -r id name image status port; do
+        ids+=("$id")
+        names+=("$name")
+        images+=("$image")
+        statuses+=("$status")
+        ports+=("$port")
+    done < <("$engine" ps --format $'{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}' 2>/dev/null)
+
+    if [ "${#ids[@]}" -eq 0 ]; then
+        echo "No running containers found."
+        return 0
+    fi
+
+    echo ""
+    printf "%-4s %-22s %-28s %-22s %-8s %-20s %s\n" "#" "NAME" "IMAGE" "STATUS" "CPU%" "MEM" "PORTS"
+    printf "%-4s %-22s %-28s %-22s %-8s %-20s %s\n" "---" "----" "-----" "------" "----" "---" "-----"
+
+    for i in "${!ids[@]}"; do
+        local id="${ids[$i]}"
+        printf "%-4s %-22s %-28s %-22s %-8s %-20s %s\n" \
+            "$((i+1))" \
+            "${names[$i]:0:22}" \
+            "${images[$i]:0:28}" \
+            "${statuses[$i]:0:22}" \
+            "${_cpu[$id]:-n/a}" \
+            "${_mem[$id]:0:20}" \
+            "${ports[$i]}"
+    done
+
+    echo ""
+    read -rp "Enter container number (or 0 to go back): " choice
+
+    if [[ "$choice" == "0" || -z "$choice" ]]; then
+        return 0
+    fi
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#ids[@]}" ]; then
+        echo "❌ Invalid selection."
+        return 1
+    fi
+
+    local idx=$((choice - 1))
+    local selected_id="${ids[$idx]}"
+    local selected_name="${names[$idx]}"
+
+    echo ""
+    echo "┌─ Container: $selected_name"
+    echo "│  ID:      $selected_id"
+    echo "│  Image:   ${images[$idx]}"
+    echo "│  Status:  ${statuses[$idx]}"
+    echo "│  CPU:     ${_cpu[$selected_id]:-n/a}"
+    echo "│  Memory:  ${_mem[$selected_id]:-n/a}"
+    echo "└─ Ports:   ${ports[$idx]:-none}"
+    echo ""
+    echo "[1] Stop"
+    echo "[2] Restart"
+    echo "[3] Remove"
+    echo "[0] Back"
+    echo ""
+    read -rp "Choose action: " action
+
+    case "$action" in
+        1)
+            echo "Stopping $selected_name..."
+            "$engine" stop "$selected_id" && echo "✅ Stopped." || echo "❌ Failed."
+            ;;
+        2)
+            echo "Restarting $selected_name..."
+            "$engine" restart "$selected_id" && echo "✅ Restarted." || echo "❌ Failed."
+            ;;
+        3)
+            echo ""
+            read -rp "⚠️  Remove container '$selected_name'? This cannot be undone. (y/n): " confirm
+            if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+                "$engine" rm -f "$selected_id" && echo "✅ Removed." || echo "❌ Failed."
+            else
+                echo "Cancelled."
+            fi
+            ;;
+        0|"") return 0 ;;
+        *) echo "❌ Invalid action." ;;
+    esac
+}
+
+_dockm_networks() {
+    local engine="$1"
+
+    local net_ids=() net_names=() net_drivers=() net_scopes=()
+    while IFS=$'\t' read -r id name driver scope; do
+        net_ids+=("$id")
+        net_names+=("$name")
+        net_drivers+=("$driver")
+        net_scopes+=("$scope")
+    done < <("$engine" network ls --format $'{{.ID}}\t{{.Name}}\t{{.Driver}}\t{{.Scope}}' 2>/dev/null)
+
+    if [ "${#net_ids[@]}" -eq 0 ]; then
+        echo "No networks found."
+        return 0
+    fi
+
+    echo ""
+    printf "%-4s %-28s %-12s %-10s %s\n" "#" "NAME" "DRIVER" "SCOPE" "ID"
+    printf "%-4s %-28s %-12s %-10s %s\n" "---" "----" "------" "-----" "--"
+
+    for i in "${!net_ids[@]}"; do
+        printf "%-4s %-28s %-12s %-10s %s\n" \
+            "$((i+1))" \
+            "${net_names[$i]:0:28}" \
+            "${net_drivers[$i]}" \
+            "${net_scopes[$i]}" \
+            "${net_ids[$i]}"
+    done
+
+    echo ""
+    read -rp "Enter network number to inspect (or 0 to go back): " choice
+
+    if [[ "$choice" == "0" || -z "$choice" ]]; then
+        return 0
+    fi
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#net_ids[@]}" ]; then
+        echo "❌ Invalid selection."
+        return 1
+    fi
+
+    local idx=$((choice - 1))
+    echo ""
+    echo "Network: ${net_names[$idx]}"
+    echo "──────────────────────────"
+    "$engine" network inspect "${net_ids[$idx]}" 2>/dev/null
+}
+
+dockm() {
+    trap 'echo ""; echo "Cancelled."; trap - INT; return 1' INT
+
+    local engine="${CONTAINER_ENGINE:-docker}"
+
+    while true; do
+        echo ""
+        echo "Container Manager  [$engine]"
+        echo "─────────────────────────────"
+        echo "[1] Manage Containers"
+        echo "[2] List Networks"
+        echo "[0] Exit"
+        echo ""
+        read -rp "Choose an option: " option
+
+        case "$option" in
+            1) _dockm_containers "$engine" ;;
+            2) _dockm_networks "$engine" ;;
+            0|"") break ;;
+            *) echo "❌ Invalid option." ;;
+        esac
+    done
+
+    trap - INT
+}
+
+# =================== EXISTING FUNCTIONS
+
 function docker_stop_all(){
   ${CONTAINER_ENGINE:-docker} stop $(${CONTAINER_ENGINE:-docker} ps -q)
 }
