@@ -32,6 +32,7 @@ source "$BASH_FUNCTIONS_DIR/fn_python.sh"
 source "$BASH_FUNCTIONS_DIR/fn_scraper.sh"
 source "$BASH_FUNCTIONS_DIR/fn_ssh.sh"
 source "$BASH_FUNCTIONS_DIR/fn_web.sh"
+source "$BASH_FUNCTIONS_DIR/fn_ai.sh"
 
 # Source each shell scripts in folders
 source "$BASH_FUNCTIONS_DIR/node/node.sh"
