@@ -9,6 +9,8 @@ generate_env_file() {
     read -p "Enter a value for NOTES_DIRECTORY (e.g. C:/Users/anon/Documents/Notes): " notes_dir
     read -p "Container engine - docker or podman (Leave empty for docker): " container_engine
     container_engine="${container_engine:-docker}"
+    read -p "Default coding agent (e.g., claude, aider) (Leave empty for claude): " coding_agent
+    coding_agent="${coding_agent:-claude}"
     current_user="$USER"
     if [[ -z "$home_dir" ]]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -36,6 +38,7 @@ CUSTOM_ENTRYPOINT="$entrypoint"
 EDITOR="$editor"
 NOTES_DIRECTORY="$notes_dir"
 CONTAINER_ENGINE="$container_engine"
+CODING_AGENT="$coding_agent"
 EOL
     echo ".env file generated successfully."
 }

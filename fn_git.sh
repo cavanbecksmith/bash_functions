@@ -311,6 +311,7 @@ repos() {
         return 0
     fi
 
+    local search_term="$1"
     local json_file="$BASH_FUNCTIONS_DIR/repos.json"
     local worktrees_json="$BASH_FUNCTIONS_DIR/worktrees.json"
     local jq_cmd="$BASH_FUNCTIONS_DIR/jq"
@@ -327,9 +328,24 @@ repos() {
         mapfile -t worktrees < <("$jq_cmd" -r '.[]' "$worktrees_json")
     fi
 
+    # Filter by search term if provided
+    if [[ -n "$search_term" ]]; then
+        local filtered_repos=()
+        for repo in "${repos[@]}"; do
+            [[ "${repo,,}" == *"${search_term,,}"* ]] && filtered_repos+=("$repo")
+        done
+        repos=("${filtered_repos[@]}")
+
+        local filtered_worktrees=()
+        for worktree in "${worktrees[@]}"; do
+            [[ "${worktree,,}" == *"${search_term,,}"* ]] && filtered_worktrees+=("$worktree")
+        done
+        worktrees=("${filtered_worktrees[@]}")
+    fi
+
     # Check if both are empty
     if [ "${#repos[@]}" -eq 0 ] && [ "${#worktrees[@]}" -eq 0 ]; then
-        echo "📭 No repos or worktrees found."
+        [[ -n "$search_term" ]] && echo "🔍 No matches for \"$search_term\"." || echo "📭 No repos or worktrees found."
         return 1
     fi
 
@@ -359,6 +375,15 @@ repos() {
         echo ""
     fi
 
+    # Auto-cd if search returned exactly one result
+    if [[ -n "$search_term" && "${#all_paths[@]}" -eq 1 ]]; then
+        local selected="${all_paths[0]}"
+        selected=$(echo "$selected" | xargs)
+        echo "📂 Changing directory to: $selected"
+        cd "$selected" || { echo "❌ Failed to change directory to: $selected"; return 1; }
+        return 0
+    fi
+
     echo -n "🔢 Enter a number to cd into that location: "
     read -r choice
 
@@ -369,7 +394,7 @@ repos() {
 
     local selected="${all_paths[$((choice - 1))]}"
     selected=$(echo "$selected" | xargs)  # Trim whitespace
-    
+
     echo "📂 Changing directory to: $selected"
     cd "$selected" || {
         echo "❌ Failed to change directory to: $selected"
