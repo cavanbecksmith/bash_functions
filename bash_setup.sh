@@ -49,20 +49,45 @@ jq_install() {
         return 1
     fi
 
-    local jq_version="jq-1.7"
+    local jq_version="jq-1.8.2"
     local uname_os uname_arch platform output_name
 
     uname_os=$(uname -s)
     uname_arch=$(uname -m)
     output_name="jq"
 
-    # Determine correct platform
+    # Determine correct platform and architecture
     case "$uname_os" in
         Linux)
-            platform="jq-linux64"
+            case "$uname_arch" in
+                x86_64|amd64)
+                    platform="jq-linux64"
+                    ;;
+                aarch64|arm64)
+                    platform="jq-linux-arm64"
+                    ;;
+                armv7l|armv6l|armhf)
+                    platform="jq-linux-armhf"
+                    ;;
+                *)
+                    echo "❌ Unsupported Linux architecture: $uname_arch"
+                    return 1
+                    ;;
+            esac
             ;;
         Darwin)
-            platform="jq-osx-amd64"
+            case "$uname_arch" in
+                x86_64|amd64)
+                    platform="jq-osx-amd64"
+                    ;;
+                arm64|aarch64)
+                    platform="jq-osx-arm64"
+                    ;;
+                *)
+                    echo "❌ Unsupported macOS architecture: $uname_arch"
+                    return 1
+                    ;;
+            esac
             ;;
         MINGW*|MSYS*|CYGWIN*)
             platform="jq-win64.exe"
