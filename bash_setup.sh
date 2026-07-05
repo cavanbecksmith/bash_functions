@@ -102,13 +102,14 @@ jq_install() {
     local install_path="$BASH_FUNCTIONS_DIR/$output_name"
     local url="https://github.com/jqlang/jq/releases/download/${jq_version}/${platform}"
 
-    echo "⬇️ Downloading jq to $install_path..."
+    echo "⬇️ Downloading jq for $uname_os/$uname_arch ($platform) to $install_path..."
     mkdir -p "$BASH_FUNCTIONS_DIR"
-    curl -L "$url" -o "$install_path" || { echo "❌ Download failed."; return 1; }
+    curl -fL --retry 3 --retry-delay 1 "$url" -o "$install_path" || { echo "❌ Download failed (URL: $url)."; return 1; }
 
     chmod +x "$install_path"
+    "$install_path" --version >/dev/null 2>&1 || { echo "❌ Installed jq failed to execute. Remove $install_path and retry."; return 1; }
     echo "✅ jq installed to $install_path"
-    echo "ℹ️ Run with: $install_path --version"
+    "$install_path" --version
 }
 
 
