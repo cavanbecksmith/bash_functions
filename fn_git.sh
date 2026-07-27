@@ -316,16 +316,46 @@ repos() {
     local worktrees_json="$BASH_FUNCTIONS_DIR/worktrees.json"
     local jq_cmd="$BASH_FUNCTIONS_DIR/jq"
 
+    # Prefer local jq, fallback to system jq when local binary is missing.
+    if [ ! -x "$jq_cmd" ]; then
+        jq_cmd=$(command -v jq 2>/dev/null)
+    fi
+
+    if [ -z "$jq_cmd" ]; then
+        echo "❌ jq is not available. Install jq or run jq_install."
+        return 1
+    fi
+
     # Read repos
     local repos=()
     if [ -f "$json_file" ]; then
-        mapfile -t repos < <("$jq_cmd" -r '.[]' "$json_file")
+        if "$jq_cmd" -e . "$json_file" >/dev/null 2>&1; then
+            mapfile -t repos < <("$jq_cmd" -r '.[]' "$json_file")
+        else
+            echo "⚠️ Invalid JSON in $json_file. Trying compatibility parser..."
+            mapfile -t repos < <(
+                tr -d '[]' < "$json_file" |
+                tr ',' '\n' |
+                sed -E "s/^[[:space:]]*['\"]?//; s/['\"]?[[:space:]]*$//" |
+                sed '/^$/d'
+            )
+        fi
     fi
 
     # Read worktrees
     local worktrees=()
     if [ -f "$worktrees_json" ]; then
-        mapfile -t worktrees < <("$jq_cmd" -r '.[]' "$worktrees_json")
+        if "$jq_cmd" -e . "$worktrees_json" >/dev/null 2>&1; then
+            mapfile -t worktrees < <("$jq_cmd" -r '.[]' "$worktrees_json")
+        else
+            echo "⚠️ Invalid JSON in $worktrees_json. Trying compatibility parser..."
+            mapfile -t worktrees < <(
+                tr -d '[]' < "$worktrees_json" |
+                tr ',' '\n' |
+                sed -E "s/^[[:space:]]*['\"]?//; s/['\"]?[[:space:]]*$//" |
+                sed '/^$/d'
+            )
+        fi
     fi
 
     # Filter by search term if provided

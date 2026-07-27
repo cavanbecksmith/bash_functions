@@ -49,20 +49,45 @@ jq_install() {
         return 1
     fi
 
-    local jq_version="jq-1.7"
+    local jq_version="jq-1.8.2"
     local uname_os uname_arch platform output_name
 
     uname_os=$(uname -s)
     uname_arch=$(uname -m)
     output_name="jq"
 
-    # Determine correct platform
+    # Determine correct platform and architecture
     case "$uname_os" in
         Linux)
-            platform="jq-linux64"
+            case "$uname_arch" in
+                x86_64|amd64)
+                    platform="jq-linux64"
+                    ;;
+                aarch64|arm64)
+                    platform="jq-linux-arm64"
+                    ;;
+                armv7l|armv6l|armhf)
+                    platform="jq-linux-armhf"
+                    ;;
+                *)
+                    echo "❌ Unsupported Linux architecture: $uname_arch"
+                    return 1
+                    ;;
+            esac
             ;;
         Darwin)
-            platform="jq-osx-amd64"
+            case "$uname_arch" in
+                x86_64|amd64)
+                    platform="jq-osx-amd64"
+                    ;;
+                arm64|aarch64)
+                    platform="jq-osx-arm64"
+                    ;;
+                *)
+                    echo "❌ Unsupported macOS architecture: $uname_arch"
+                    return 1
+                    ;;
+            esac
             ;;
         MINGW*|MSYS*|CYGWIN*)
             platform="jq-win64.exe"
@@ -77,13 +102,14 @@ jq_install() {
     local install_path="$BASH_FUNCTIONS_DIR/$output_name"
     local url="https://github.com/jqlang/jq/releases/download/${jq_version}/${platform}"
 
-    echo "⬇️ Downloading jq to $install_path..."
+    echo "⬇️ Downloading jq for $uname_os/$uname_arch ($platform) to $install_path..."
     mkdir -p "$BASH_FUNCTIONS_DIR"
-    curl -L "$url" -o "$install_path" || { echo "❌ Download failed."; return 1; }
+    curl -fL --retry 3 --retry-delay 1 "$url" -o "$install_path" || { echo "❌ Download failed (URL: $url)."; return 1; }
 
     chmod +x "$install_path"
+    "$install_path" --version >/dev/null 2>&1 || { echo "❌ Installed jq failed to execute. Remove $install_path and retry."; return 1; }
     echo "✅ jq installed to $install_path"
-    echo "ℹ️ Run with: $install_path --version"
+    "$install_path" --version
 }
 
 
