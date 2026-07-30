@@ -597,7 +597,7 @@ reponew() {
 }
 
 alias repos_edit="$EDITOR $BASH_FUNCTIONS_DIR/repos.json"
-alias worktrees_edit="$EDITOR $BASH_FUNCTIONS_DIR/repos.json"
+alias worktrees_edit="$EDITOR $BASH_FUNCTIONS_DIR/worktrees.json"
 alias gitlog="git log --oneline"
 
 alias lazygit_install="$BASH_FUNCTIONS_DIR/apps/lazygit/install_lazygit.sh"
