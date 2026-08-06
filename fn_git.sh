@@ -902,7 +902,8 @@ gitm() {
     echo "------------------"
     echo "[1] Switch branch"
     echo "[2] Bulk delete branches"
-    echo "[3] List local branches"
+    echo "[3] Create branch"
+    echo "[4] List local branches"
     echo ""
     read -rp "Choose an option: " option
 
@@ -1067,6 +1068,23 @@ gitm() {
             ;;
 
         3)
+            echo ""
+            read -rp "Enter new branch name: " new_branch
+
+            if [ -z "$new_branch" ]; then
+                echo "❌ No branch name provided."
+                trap - INT
+                return 1
+            fi
+
+            if git checkout -b "$new_branch"; then
+                echo "✅ Created and switched to branch '$new_branch'"
+            else
+                echo "❌ Failed to create branch '$new_branch'"
+            fi
+            ;;
+
+        4)
             echo ""
             echo "Local branches:"
             echo ""
