@@ -895,13 +895,13 @@ greauth(){
 }
 
 gitm() {
-    trap 'echo ""; echo "Cancelled."; trap - INT; return 1' INT
+    trap 'tput cnorm 2>/dev/null; echo ""; echo "Cancelled."; trap - INT; return 1' INT
 
     echo ""
     echo "Git Branch Manager"
     echo "------------------"
     echo "[1] Switch branch"
-    echo "[2] Delete branch"
+    echo "[2] Bulk delete branches"
     echo "[3] List local branches"
     echo ""
     read -rp "Choose an option: " option
@@ -919,6 +919,7 @@ gitm() {
 
             if [ "${#branches[@]}" -eq 0 ]; then
                 echo "No branches found."
+                trap - INT
                 return 1
             fi
 
@@ -931,49 +932,135 @@ gitm() {
 
             if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#branches[@]}" ]; then
                 echo "Invalid selection."
+                trap - INT
                 return 1
             fi
 
             local selected="${branches[$((choice - 1))]}"
-            # Strip remote prefix (e.g. remotes/origin/) for checkout
             local checkout_name
             checkout_name=$(echo "$selected" | sed 's|remotes/[^/]*/||')
             git checkout "$checkout_name"
             ;;
 
         2)
-            echo ""
-            echo "Available local branches:"
-            echo ""
+            local current_branch
+            current_branch=$(git branch --show-current 2>/dev/null)
 
             local branches=()
             while IFS= read -r line; do
+                [[ "$line" == "$current_branch" ]] && continue
                 branches+=("$line")
             done < <(git branch 2>/dev/null | sed 's/^[ *]*//' | sort)
 
             if [ "${#branches[@]}" -eq 0 ]; then
-                echo "No local branches found."
+                echo "No branches available to delete (only current branch '$current_branch' exists)."
+                trap - INT
                 return 1
             fi
 
+            local selected=()
             for i in "${!branches[@]}"; do
-                printf "[%d] %s\n" "$((i + 1))" "${branches[$i]}"
+                selected[$i]=0
             done
 
-            echo ""
-            read -rp "Enter branch number to delete: " choice
+            local cursor=0
+            local total="${#branches[@]}"
 
-            if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#branches[@]}" ]; then
-                echo "Invalid selection."
-                return 1
+            _gitm_render() {
+                if [ "$1" != "first" ]; then
+                    printf "\033[%dA" "$((total + 4))"
+                fi
+
+                echo ""
+                echo "🗑️  Git Branch Bulk Delete (current: $current_branch)"
+                echo "   ↑/↓ navigate | SPACE toggle | ENTER confirm | q quit"
+                echo ""
+
+                for i in "${!branches[@]}"; do
+                    local marker="  "
+                    local pointer="  "
+                    if [ "${selected[$i]}" -eq 1 ]; then
+                        marker="✅"
+                    else
+                        marker="  "
+                    fi
+                    if [ "$i" -eq "$cursor" ]; then
+                        pointer="▸ "
+                    else
+                        pointer="  "
+                    fi
+                    printf "\033[K%s%s %s\n" "$pointer" "$marker" "${branches[$i]}"
+                done
+            }
+
+            tput civis 2>/dev/null
+            _gitm_render "first"
+
+            while true; do
+                IFS= read -rsn1 key
+
+                case "$key" in
+                    $'\x1b')
+                        read -rsn2 -t 0.1 seq
+                        case "$seq" in
+                            '[A') ((cursor > 0)) && ((cursor--)) ;;
+                            '[B') ((cursor < total - 1)) && ((cursor++)) ;;
+                        esac
+                        ;;
+                    ' ')
+                        if [ "${selected[$cursor]}" -eq 0 ]; then
+                            selected[$cursor]=1
+                        else
+                            selected[$cursor]=0
+                        fi
+                        ;;
+                    '')
+                        break
+                        ;;
+                    'q'|'Q')
+                        tput cnorm 2>/dev/null
+                        echo ""
+                        echo "Cancelled."
+                        trap - INT
+                        return 0
+                        ;;
+                esac
+
+                _gitm_render
+            done
+
+            tput cnorm 2>/dev/null
+
+            local to_delete=()
+            for i in "${!branches[@]}"; do
+                if [ "${selected[$i]}" -eq 1 ]; then
+                    to_delete+=("${branches[$i]}")
+                fi
+            done
+
+            if [ "${#to_delete[@]}" -eq 0 ]; then
+                echo ""
+                echo "No branches selected."
+                trap - INT
+                return 0
             fi
 
-            local selected="${branches[$((choice - 1))]}"
             echo ""
-            read -rp "Are you sure you want to delete branch '$selected'? (y/n): " confirm
+            echo "⚠️  Branches to delete:"
+            for b in "${to_delete[@]}"; do
+                echo "   - $b"
+            done
+            echo ""
+            read -rp "Delete these ${#to_delete[@]} branch(es)? (y/n): " confirm
 
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
-                git branch -D "$selected"
+                for b in "${to_delete[@]}"; do
+                    if git branch -D "$b" 2>/dev/null; then
+                        echo "✅ Deleted: $b"
+                    else
+                        echo "❌ Failed to delete: $b"
+                    fi
+                done
             else
                 echo "Cancelled."
             fi
