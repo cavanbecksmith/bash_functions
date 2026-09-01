@@ -897,9 +897,12 @@ greauth(){
 gitm() {
     trap 'tput cnorm 2>/dev/null; echo ""; echo "Cancelled."; trap - INT; return 1' INT
 
+    local filter="$1"
+
     echo ""
     echo "Git Branch Manager"
     echo "------------------"
+    [ -n "$filter" ] && echo "Filter: \"$filter\"" && echo ""
     echo "[1] Switch branch"
     echo "[2] Bulk delete branches"
     echo "[3] Create branch"
@@ -915,11 +918,18 @@ gitm() {
 
             local branches=()
             while IFS= read -r line; do
+                if [ -n "$filter" ]; then
+                    [[ "${line,,}" == *"${filter,,}"* ]] || continue
+                fi
                 branches+=("$line")
             done < <(git branch 2>/dev/null | sed 's/^[ *]*//' | grep -v 'HEAD ->' | sort -u)
 
             if [ "${#branches[@]}" -eq 0 ]; then
-                echo "No branches found."
+                if [ -n "$filter" ]; then
+                    echo "No branches matching \"$filter\"."
+                else
+                    echo "No branches found."
+                fi
                 trap - INT
                 return 1
             fi
@@ -950,11 +960,18 @@ gitm() {
             local branches=()
             while IFS= read -r line; do
                 [[ "$line" == "$current_branch" ]] && continue
+                if [ -n "$filter" ]; then
+                    [[ "${line,,}" == *"${filter,,}"* ]] || continue
+                fi
                 branches+=("$line")
             done < <(git branch 2>/dev/null | sed 's/^[ *]*//' | sort)
 
             if [ "${#branches[@]}" -eq 0 ]; then
-                echo "No branches available to delete (only current branch '$current_branch' exists)."
+                if [ -n "$filter" ]; then
+                    echo "No branches matching \"$filter\" available to delete."
+                else
+                    echo "No branches available to delete (only current branch '$current_branch' exists)."
+                fi
                 trap - INT
                 return 1
             fi
@@ -1088,7 +1105,11 @@ gitm() {
             echo ""
             echo "Local branches:"
             echo ""
-            git branch | sed 's/^[ *]*//' | sort | nl -w2 -s') '
+            if [ -n "$filter" ]; then
+                git branch | sed 's/^[ *]*//' | sort | grep -i -- "$filter" | nl -w2 -s') '
+            else
+                git branch | sed 's/^[ *]*//' | sort | nl -w2 -s') '
+            fi
             ;;
 
         *)
