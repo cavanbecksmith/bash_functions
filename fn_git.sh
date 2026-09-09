@@ -6,6 +6,7 @@ alias pullr='pull_git_repos'
 alias pushr='push_git_repos'
 alias rpoa='repoadd'
 alias rpod='repodel'
+alias rpot='repos_toggle'
 alias rpo='repos'
 alias rpoo='reposopen'
 alias rpc='reposcheck'
@@ -200,6 +201,48 @@ repoadd() {
     "$jq_cmd" --arg path "$abs_path" '. + [$path]' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
 
     echo "✅ Added to repos.json: $abs_path"
+}
+
+
+repos_toggle() {
+    local repo_path="${1:-.}"  # Default to current directory if no argument
+    local json_file="$BASH_FUNCTIONS_DIR/repos.json"
+    local jq_cmd="$BASH_FUNCTIONS_DIR/jq"
+
+    # Create file if it doesn't exist
+    if [ ! -f "$json_file" ]; then
+        echo "[]" > "$json_file"
+    fi
+
+    if [ ! -e "$repo_path" ]; then
+        echo "❌ Path does not exist: $repo_path"
+        return 1
+    fi
+
+    local abs_path
+    abs_path=$(cd "$repo_path" && pwd)
+
+    if [ -z "$abs_path" ]; then
+        echo "❌ Failed to resolve path: $repo_path"
+        return 1
+    fi
+
+    local tmp_file
+    tmp_file=$(mktemp)
+
+    if "$jq_cmd" -e --arg path "$abs_path" 'index($path) != null' "$json_file" >/dev/null; then
+        # Present -> remove
+        "$jq_cmd" --arg path "$abs_path" 'map(select(. != $path))' "$json_file" > "$tmp_file" \
+            && mv "$tmp_file" "$json_file"
+        echo "🗑️  Removed from repos.json: $abs_path"
+    else
+        # Absent -> add
+        "$jq_cmd" --arg path "$abs_path" '. + [$path]' "$json_file" > "$tmp_file" \
+            && mv "$tmp_file" "$json_file"
+        echo "✅ Added to repos.json: $abs_path"
+    fi
+
+    rm -f "$tmp_file" 2>/dev/null
 }
 
 
