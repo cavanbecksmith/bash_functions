@@ -1,4 +1,4 @@
-alias open="explorer"
+alias open="explorer $@"
 alias 7z='"C://Program Files/7-Zip/7z.exe"'
 alias startup="cd 'C:\Users\\$USER\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup'"
 alias hosts="nano 'C:\Windows\System32\drivers\etc\hosts'"
