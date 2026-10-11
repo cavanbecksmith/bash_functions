@@ -19,6 +19,16 @@ BASH_FUNCTIONS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # source "$BASH_FUNCTIONS_DIR/alias.sh"
 source "$BASH_FUNCTIONS_DIR/screen_manager/screen_loader.sh"
 source "$BASH_FUNCTIONS_DIR/bash_setup.sh"
+
+# CORE COMMANDS
+alias edit="$EDITOR ~/bash_functions && $EDITOR ~/.bashrc"
+alias editn="nano ~/.bashrc"
+alias edit_subl="$EDITOR ~/.bashrc"
+alias ref=". ~/.bashrc"
+alias ide="$EDITOR $@"
+alias ..="cd ../"
+alias ...="cd ../../"
+
 source "$BASH_FUNCTIONS_DIR/fn_bunk.sh"
 source "$BASH_FUNCTIONS_DIR/fn_docker.sh"
 source "$BASH_FUNCTIONS_DIR/fn_database.sh"
@@ -38,14 +48,6 @@ source "$BASH_FUNCTIONS_DIR/fn_ai.sh"
 source "$BASH_FUNCTIONS_DIR/node/node.sh"
 source "$BASH_FUNCTIONS_DIR/node/fetcher.sh"
 
-# CORE COMMANDS
-alias edit="$EDITOR ~/bash_functions && $EDITOR ~/.bashrc"
-alias editn="nano ~/.bashrc"
-alias edit_subl="$EDITOR ~/.bashrc"
-alias ref=". ~/.bashrc"
-alias ide="$EDITOR $@"
-alias ..="cd ../"
-alias ...="cd ../../"
 
 # Windows
 if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then

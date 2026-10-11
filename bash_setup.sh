@@ -36,6 +36,7 @@ USER="$current_user"
 HOME_DIRECTORY="$home_dir"
 CUSTOM_ENTRYPOINT="$entrypoint"
 EDITOR="$editor"
+EDITORS=( "$editor" "nvim" )
 NOTES_DIRECTORY="$notes_dir"
 CONTAINER_ENGINE="$container_engine"
 CODING_AGENT="$coding_agent"
@@ -112,12 +113,25 @@ jq_install() {
     "$install_path" --version
 }
 
+load_editors() {
+    # Creates alias's IE ide1, ide2 for different ide configurations
+    # In the editors variable
+    local count=0
+    for i in "${EDITORS[@]}"
+    do
+        alias ide$count="export EDITOR_INDEX=$count"
+        count=$((count+1))
+    done
+
+    export EDITOR=${EDITORS[EDITOR_INDEX]:-${EDITORS[0]}}
+}
 
 load_env_file() {
     source "$BASH_FUNCTION_DIR/.env"
     if [[ "$CUSTOM_ENTRYPOINT" != "" ]]; then
         source "$CUSTOM_ENTRYPOINT"
     fi
+    load_editors
 }
 
 env_settings() {

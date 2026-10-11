@@ -937,6 +937,59 @@ greauth(){
    git fetch
 }
 
+gits() {
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        echo "❌ Error: Not inside a git repository."
+        return 1
+    fi
+
+    local search_term="$1"
+
+    local branches=()
+    while IFS= read -r line; do
+        branches+=("$line")
+    done < <(git branch 2>/dev/null | sed 's/^[ *]*//' | grep -v 'HEAD ->' | sort -u)
+
+    # Filter by search term if provided
+    if [[ -n "$search_term" ]]; then
+        local filtered_branches=()
+        for branch in "${branches[@]}"; do
+            [[ "${branch,,}" == *"${search_term,,}"* ]] && filtered_branches+=("$branch")
+        done
+        branches=("${filtered_branches[@]}")
+    fi
+
+    if [ "${#branches[@]}" -eq 0 ]; then
+        [[ -n "$search_term" ]] && echo "🔍 No branches matching \"$search_term\"." || echo "📭 No branches found."
+        return 1
+    fi
+
+    # Auto-switch if search returned exactly one result
+    if [[ -n "$search_term" && "${#branches[@]}" -eq 1 ]]; then
+        local selected="${branches[0]}"
+        echo "🔀 Switching to branch: $selected"
+        git checkout "$selected"
+        return $?
+    fi
+
+    echo "🌿 Branches:"
+    for i in "${!branches[@]}"; do
+        printf "  [%d] %s\n" "$((i + 1))" "${branches[$i]}"
+    done
+
+    echo -n "🔢 Enter a number to switch to that branch: "
+    read -r choice
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#branches[@]}" ]; then
+        echo "❌ Invalid selection."
+        return 1
+    fi
+
+    local selected="${branches[$((choice - 1))]}"
+    echo "🔀 Switching to branch: $selected"
+    git checkout "$selected"
+}
+
 gitm() {
     trap 'tput cnorm 2>/dev/null; echo ""; echo "Cancelled."; trap - INT; return 1' INT
 
