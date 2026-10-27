@@ -1,3 +1,23 @@
+alias fixterm='reset_terminal'
+
+# Recover a terminal left in a broken state by a CLI that exited badly:
+# no echo, no line editing, garbage on mouse clicks, stuck alternate screen.
+# Echo is usually off when you need this, so type it blind and press Enter.
+reset_terminal() {
+    stty sane 2>/dev/null                 # cooked mode, echo, sane erase/kill
+    printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l'   # mouse reporting off
+    printf '\e[?1049l'                    # leave alternate screen
+    printf '\e[?2004l'                    # bracketed paste off
+    printf '\e[?7h'                       # line wrap back on
+    printf '\e[?25h'                      # cursor visible
+    printf '\e[0m'                        # clear colours/reverse video
+    printf '\e(B\e)0\017'                 # back to ASCII charset (fixes line-noise text)
+    printf '\e[!p'                        # soft terminal reset
+    tput rmkx 2>/dev/null                 # leave keypad application mode
+    printf '\r'
+    echo "✅ Terminal reset. If it is still wedged, press Ctrl-Q (Ctrl-S pauses output)."
+}
+
 migration_date() {
   # Y_m_d_His
   local dt=$(date '+%Y_%m_%d_%H%M%S');
